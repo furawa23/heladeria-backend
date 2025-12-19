@@ -1,0 +1,18 @@
+# Maven
+/target/
+!.mvn/wrapper/maven-wrapper.jar
+
+# Spring
+application.properties
+application.yml
+
+# IDE
+/.idea/
+/.vscode/
+*.iml
+
+# Logs
+*.log
+
+# OS
+.DS_Store
