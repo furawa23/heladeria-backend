@@ -14,7 +14,9 @@ import lombok.EqualsAndHashCode;
 @SQLDelete(sql = "UPDATE empresa SET deleted_at = NOW() where id = ?")
 public class Empresa extends BaseEntity {
 
+    private String ruc;
     private String razonSocial;
     private String nombreDuenio;
     private String telefono;
+    
 }
