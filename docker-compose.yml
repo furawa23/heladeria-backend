@@ -1,0 +1,18 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: heladeria-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: heladeria_db
+      POSTGRES_USER: heladeria_user
+      POSTGRES_PASSWORD: heladeria_pass
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
