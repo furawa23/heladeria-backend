@@ -30,6 +30,14 @@ public class SucursalController {
         return ResponseEntity.ok(response);
     }
 
+    @GetMapping("/empresa/{idEmpresa}")
+    public ResponseEntity<Page<SucursalResponseDTO>> listarPorEmpresa(
+            @PathVariable Long idEmpresa, 
+            Pageable pageable) {
+        Page<SucursalResponseDTO> response = sucursalService.listarPorEmpresa(idEmpresa, pageable);
+        return ResponseEntity.ok(response);
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<SucursalResponseDTO> obtenerPorId(@PathVariable Long id) {
         SucursalResponseDTO response = sucursalService.obtenerPorId(id);

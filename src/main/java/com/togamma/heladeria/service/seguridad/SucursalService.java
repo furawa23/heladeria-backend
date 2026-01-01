@@ -9,6 +9,7 @@ import com.togamma.heladeria.dto.response.seguridad.SucursalResponseDTO;
 public interface SucursalService {
     SucursalResponseDTO crear(SucursalRequestDTO dto);
     Page<SucursalResponseDTO> listarTodas(Pageable pageable);
+    Page<SucursalResponseDTO> listarPorEmpresa(Long idEmpresa, Pageable pageable);
     SucursalResponseDTO obtenerPorId(Long id); 
     SucursalResponseDTO actualizar(Long id, SucursalRequestDTO dto);
     void eliminar(Long id);

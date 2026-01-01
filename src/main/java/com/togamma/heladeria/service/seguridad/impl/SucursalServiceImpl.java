@@ -47,6 +47,13 @@ public class SucursalServiceImpl implements SucursalService {
 
     @Override
     @Transactional(readOnly = true)
+    public Page<SucursalResponseDTO> listarPorEmpresa(Long idEmpresa, Pageable page) {
+        return sucursalRepository.findByEmpresaId(idEmpresa, page)
+                .map(this::mapToResponse);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public SucursalResponseDTO obtenerPorId(Long id) {
         Sucursal sucursal = sucursalRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Sucursal no encontrada"));
@@ -92,7 +99,6 @@ public class SucursalServiceImpl implements SucursalService {
         sucursalRepository.save(sucursal);
     }
 
-    // Mapeo simple sin hijos, usando el constructor visto en EmpresaServiceImpl
     private SucursalResponseDTO mapToResponse(Sucursal s) {
         return new SucursalResponseDTO(
             s.getId(),
