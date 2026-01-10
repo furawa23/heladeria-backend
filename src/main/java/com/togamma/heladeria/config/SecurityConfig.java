@@ -10,18 +10,18 @@ import org.springframework.security.config.annotation.authentication.configurati
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.Arrays;
 import java.util.List;
-
-import static org.springframework.security.config.Customizer.withDefaults;
 
 @Configuration
 @EnableWebSecurity
@@ -30,6 +30,7 @@ public class SecurityConfig {
 
     // Inyectamos el servicio que busca usuarios en TU base de datos
     private final UserDetailsService userDetailsService;
+    private final JwtAuthenticationFilter jwtAuthFilter;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -49,13 +50,11 @@ public class SecurityConfig {
                 // Todo lo demás requiere estar logueado
                 .anyRequest().authenticated()
             )
-            
+            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             // 5. Configurar el proveedor de autenticación (DB + BCrypt)
             .authenticationProvider(authenticationProvider())
             
-            // 6. Habilitar Login Básico (Popup del navegador o Header "Authorization: Basic ...")
-            // Esto es útil para probar rápido. Más adelante lo cambiaremos por JWT.
-            .httpBasic(withDefaults());
+            .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
