@@ -1,9 +1,18 @@
 package com.togamma.heladeria.config;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.AuthenticationProvider;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
@@ -12,29 +21,70 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import java.util.Arrays;
 import java.util.List;
 
+import static org.springframework.security.config.Customizer.withDefaults;
+
 @Configuration
 @EnableWebSecurity
+@RequiredArgsConstructor // 1. Inyecta dependencias automáticamente (Lombok)
 public class SecurityConfig {
+
+    // Inyectamos el servicio que busca usuarios en TU base de datos
+    private final UserDetailsService userDetailsService;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-            // 1. Configuración explicita de CORS
+            // 2. Mantenemos tu configuración de CORS (Angular lo necesita)
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-            // 2. Desactivar CSRF (Indispensable para que funcionen los POST/PUT)
-            .csrf(csrf -> csrf.disable())
-            // 3. Autorizar todo (Solo para modo desarrollo)
+            
+            // 3. Desactivar CSRF (Correcto para APIs REST)
+            .csrf(AbstractHttpConfigurer::disable)
+            
+            // 4. AQUI CAMBIAMOS LA SEGURIDAD: De "todo abierto" a "necesitas permiso"
             .authorizeHttpRequests(auth -> auth
-                .anyRequest().permitAll()
-            );
-        
+                // Rutas públicas (Login, Registro, etc.)
+                .requestMatchers("/api/auth/**", "/public/**").permitAll()
+                // Rutas solo para ADMIN (Ejemplo)
+                .requestMatchers("/api/usuarios/**").hasRole("SUPERADMIN")
+                // Todo lo demás requiere estar logueado
+                .anyRequest().authenticated()
+            )
+            
+            // 5. Configurar el proveedor de autenticación (DB + BCrypt)
+            .authenticationProvider(authenticationProvider())
+            
+            // 6. Habilitar Login Básico (Popup del navegador o Header "Authorization: Basic ...")
+            // Esto es útil para probar rápido. Más adelante lo cambiaremos por JWT.
+            .httpBasic(withDefaults());
+
         return http.build();
     }
 
+    // --- BEANS DE SEGURIDAD (Nuevos) ---
+
+    @Bean
+    public AuthenticationProvider authenticationProvider() {
+        DaoAuthenticationProvider provider = new DaoAuthenticationProvider(userDetailsService);
+        provider.setPasswordEncoder(passwordEncoder());
+        return provider;
+    }
+
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder(); // El estándar de la industria
+    }
+
+    @Bean
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
+        return config.getAuthenticationManager();
+    }
+
+    // --- TU CONFIGURACIÓN DE CORS (Intacta) ---
+    
     @Bean
     CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("http://localhost:4200")); // Tu Angular
+        configuration.setAllowedOrigins(List.of("http://localhost:4200"));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);
