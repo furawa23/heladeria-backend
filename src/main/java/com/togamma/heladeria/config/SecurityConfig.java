@@ -44,7 +44,7 @@ public class SecurityConfig {
             // 4. AQUI CAMBIAMOS LA SEGURIDAD: De "todo abierto" a "necesitas permiso"
             .authorizeHttpRequests(auth -> auth
                 // Rutas públicas (Login, Registro, etc.)
-                .requestMatchers("/api/auth/**", "/public/**").permitAll()
+                .requestMatchers("/api/auth/login", "/public/**").permitAll()
                 // Rutas solo para ADMIN (Ejemplo)
                 .requestMatchers("/api/usuarios/**").hasRole("SUPERADMIN")
                 // Todo lo demás requiere estar logueado
