@@ -1,6 +1,7 @@
 package com.togamma.heladeria.model.almacen;
 
 import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.SQLRestriction;
 
 import com.togamma.heladeria.model.BaseEntity;
 import com.togamma.heladeria.model.seguridad.Sucursal;
@@ -16,6 +17,7 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode(callSuper = false)
 @Entity
 @SQLDelete(sql = "UPDATE stock_producto SET deleted_at = NOW() where id = ?")
+@SQLRestriction("deleted_at IS NULL")
 public class StockProducto extends BaseEntity {
 
     private Integer cantidad;

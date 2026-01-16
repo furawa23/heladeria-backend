@@ -1,6 +1,7 @@
 package com.togamma.heladeria.model.almacen;
 
 import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.SQLRestriction;
 
 import com.togamma.heladeria.model.BaseEntity;
 
@@ -15,6 +16,7 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode(callSuper = false)
 @Entity
 @SQLDelete(sql = "UPDATE receta_item SET deleted_at = NOW() where id = ?")
+@SQLRestriction("deleted_at IS NULL")
 public class RecetaItem extends BaseEntity {
 
     private Integer cantidadUsada;

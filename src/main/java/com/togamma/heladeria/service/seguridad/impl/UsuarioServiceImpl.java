@@ -12,7 +12,9 @@ import com.togamma.heladeria.dto.request.seguridad.UsuarioRequestDTO;
 import com.togamma.heladeria.dto.response.seguridad.UsuarioResponseDTO;
 import com.togamma.heladeria.model.seguridad.Rol;
 import com.togamma.heladeria.model.seguridad.Sucursal;
+import com.togamma.heladeria.model.seguridad.Empresa;
 import com.togamma.heladeria.model.seguridad.Usuario;
+import com.togamma.heladeria.repository.seguridad.EmpresaRepository;
 import com.togamma.heladeria.repository.seguridad.SucursalRepository;
 import com.togamma.heladeria.repository.seguridad.UsuarioRepository;
 import com.togamma.heladeria.service.seguridad.UsuarioService;
@@ -25,27 +27,45 @@ import lombok.RequiredArgsConstructor;
 public class UsuarioServiceImpl implements UsuarioService {
 
     private final SucursalRepository sucursalRepository;
+    private final EmpresaRepository empresaRepository;
     private final UsuarioRepository usuarioRepository;
     private final PasswordEncoder passwordEncoder;
 
     @Override
     @Transactional
     public UsuarioResponseDTO crearDesdeSuperadmin(UsuarioRequestDTO dto) {
+        
         if (usuarioRepository.findByUsername(dto.username()).isPresent()) {
             throw new RuntimeException("El usuario ya existe");
         }
 
-        Sucursal sucursal = sucursalRepository.findById(dto.idSucursal())
-                .orElseThrow(() -> new RuntimeException("Sucursal no encontrada con ID: " + dto.idSucursal()));
-
         Usuario usuario = new Usuario();
         usuario.setUsername(dto.username());
         usuario.setPassword(passwordEncoder.encode(dto.password()));
-        usuario.setRol(Rol.valueOf(dto.rol())); 
-        usuario.setSucursal(sucursal);
+        usuario.setRol(Rol.valueOf(dto.rol()));
+
+        if (dto.idSucursal() != null) {
+            Sucursal sucursal = sucursalRepository.findById(dto.idSucursal())
+                    .orElseThrow(() -> new RuntimeException("Sucursal no encontrada con ID: " + dto.idSucursal()));
+            usuario.setSucursal(sucursal);
+            usuario.setEmpresa(usuario.getSucursal().getEmpresa());
+        } 
+        
+        // 2. Si NO hay Sucursal pero SÍ hay Empresa (Caso Dueños)
+        else if (dto.idEmpresa() != null) {
+            Empresa empresa = empresaRepository.findById(dto.idEmpresa())
+                    .orElseThrow(() -> new RuntimeException("Empresa no encontrada con ID: " + dto.idEmpresa()));
+            usuario.setEmpresa(empresa);
+            usuario.setSucursal(null); 
+        }
+        // 3. Caso Superadmin (Sin sucursal ni empresa)
+        else {
+            usuario.setSucursal(null);
+            usuario.setEmpresa(null);
+        }
 
         Usuario guardado = usuarioRepository.save(usuario);
-        return mapToResponse(guardado);
+        return UsuarioResponseDTO.mapToResponse(guardado);
     }
 
     @Override
@@ -74,28 +94,28 @@ public class UsuarioServiceImpl implements UsuarioService {
                 usuario.setSucursal(sucursalActual); 
 
         Usuario guardado = usuarioRepository.save(usuario);
-        return mapToResponse(guardado);
+        return UsuarioResponseDTO.mapToResponse(guardado);
     }
 
     @Override
     @Transactional(readOnly = true)
     public Page<UsuarioResponseDTO> listarTodos(Pageable pageable) {
         return usuarioRepository.findAll(pageable)
-                .map(this::mapToResponse);
+                .map(UsuarioResponseDTO::mapToResponse);
     }
 
     @Override
     @Transactional(readOnly = true)
     public Page<UsuarioResponseDTO> listarPorSucursal(Long idSucursal, Pageable pageable) {
         return usuarioRepository.findBySucursalId(idSucursal, pageable)
-        .map(this::mapToResponse);
+        .map(UsuarioResponseDTO::mapToResponse);
     }
 
     @Override
     @Transactional(readOnly = true)
     public Page<UsuarioResponseDTO> listarPorEmpresa(Long idEmpresa, Pageable pageable) {
         return usuarioRepository.findBySucursalEmpresaId(idEmpresa, pageable)
-        .map(this::mapToResponse);
+        .map(UsuarioResponseDTO::mapToResponse);
     }
 
     @Override
@@ -104,7 +124,7 @@ public class UsuarioServiceImpl implements UsuarioService {
         Usuario usuario = usuarioRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
-        return mapToResponse(usuario);
+        return UsuarioResponseDTO.mapToResponse(usuario);
     }
 
     @Override
@@ -116,7 +136,7 @@ public class UsuarioServiceImpl implements UsuarioService {
         usuario.setPassword(passwordEncoder.encode(dto.password()));
         usuario.setRol(Rol.valueOf(dto.rol())); 
 
-        return mapToResponse(usuario);
+        return UsuarioResponseDTO.mapToResponse(usuario);
     }
 
     @Override
@@ -136,17 +156,5 @@ public class UsuarioServiceImpl implements UsuarioService {
     
         usuario.setDeletedAt(null);
         usuarioRepository.save(usuario);
-    }
-
-    private UsuarioResponseDTO mapToResponse(Usuario usuario) {
-        return new UsuarioResponseDTO(
-            usuario.getCreatedAt(),
-            usuario.getUpdatedAt(),
-            usuario.getId(),
-            usuario.getUsername(),
-            usuario.getRol().name(),
-            usuario.getEmpresa() != null ? usuario.getEmpresa().getRazonSocial() : null,
-            usuario.getSucursal() != null ? usuario.getSucursal().getNombre() : null
-        );
     }
 }

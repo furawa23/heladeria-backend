@@ -3,6 +3,7 @@ package com.togamma.heladeria.model.almacen;
 import java.util.List;
 
 import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.SQLRestriction;
 
 import com.togamma.heladeria.model.BaseEntity;
 import com.togamma.heladeria.model.seguridad.Empresa;
@@ -20,6 +21,7 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode(callSuper = false)
 @Entity
 @SQLDelete(sql = "UPDATE producto SET deleted_at = NOW() where id = ?")
+@SQLRestriction("deleted_at IS NULL")
 public class Producto extends BaseEntity {
 
     private String nombre;
