@@ -2,18 +2,15 @@ package com.togamma.heladeria.service.almacen.impl;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.togamma.heladeria.dto.request.almacen.CategoriaProdRequestDTO;
 import com.togamma.heladeria.dto.response.almacen.CategoriaProdResponseDTO;
 import com.togamma.heladeria.model.almacen.CategoriaProducto;
-import com.togamma.heladeria.model.seguridad.Empresa;
-import com.togamma.heladeria.model.seguridad.Usuario;
 import com.togamma.heladeria.repository.almacen.CategoriaProductoRepository;
-import com.togamma.heladeria.repository.seguridad.UsuarioRepository;
 import com.togamma.heladeria.service.almacen.CategoriaProductoService;
+import com.togamma.heladeria.service.seguridad.ContextService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -23,14 +20,14 @@ import lombok.RequiredArgsConstructor;
 public class CategoriaProductoServiceImpl implements CategoriaProductoService {
 
     private final CategoriaProductoRepository categoriaRepository;
-    private final UsuarioRepository usuarioRepository;
+    private final ContextService contexto;
 
     @Override
     public CategoriaProdResponseDTO crear(CategoriaProdRequestDTO dto) {
 
         CategoriaProducto categoria = new CategoriaProducto();
         categoria.setNombre(dto.nombre());
-        categoria.setEmpresa(getEmpresaLogueada());
+        categoria.setEmpresa(contexto.getEmpresaLogueada());
 
         CategoriaProducto guardada = categoriaRepository.save(categoria);
         return mapToResponse(guardada);
@@ -39,7 +36,7 @@ public class CategoriaProductoServiceImpl implements CategoriaProductoService {
     @Override
     @Transactional(readOnly = true)
     public Page<CategoriaProdResponseDTO> listarTodas(Pageable page) {
-        return categoriaRepository.findByEmpresaId(getEmpresaLogueada().getId(), page)
+        return categoriaRepository.findByEmpresaId(contexto.getEmpresaLogueada().getId(), page)
                 .map(this::mapToResponse);
     }
 
@@ -58,7 +55,7 @@ public class CategoriaProductoServiceImpl implements CategoriaProductoService {
         CategoriaProducto categoria = categoriaRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Categoria de Producto no encontrada"));
 
-        if (!categoria.getEmpresa().getId().equals(getEmpresaLogueada().getId())) {
+        if (!categoria.getEmpresa().getId().equals(contexto.getEmpresaLogueada().getId())) {
             throw new RuntimeException("No tienes permiso para modificar esta categoría");
         }
 
@@ -86,20 +83,5 @@ public class CategoriaProductoServiceImpl implements CategoriaProductoService {
             s.getDeletedAt(),
             s.getNombre()
         );
-    }
-
-    private Empresa getEmpresaLogueada() {
-        String currentUsername = SecurityContextHolder.getContext().getAuthentication().getName();
-
-        Usuario usuarioLogueado = usuarioRepository.findByUsername(currentUsername)
-                .orElseThrow(() -> new RuntimeException("No se encontró al usuario de la sesión actual"));
-        
-        Empresa empresaActual = usuarioLogueado.getSucursal().getEmpresa();
-
-        if (empresaActual == null) {
-             throw new RuntimeException("El usuario logueado no pertenece a ninguna empresa");
-        }
-
-        return empresaActual;
     }
 }

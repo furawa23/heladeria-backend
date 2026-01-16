@@ -2,7 +2,6 @@ package com.togamma.heladeria.service.seguridad.impl;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,6 +16,7 @@ import com.togamma.heladeria.model.seguridad.Usuario;
 import com.togamma.heladeria.repository.seguridad.EmpresaRepository;
 import com.togamma.heladeria.repository.seguridad.SucursalRepository;
 import com.togamma.heladeria.repository.seguridad.UsuarioRepository;
+import com.togamma.heladeria.service.seguridad.ContextService;
 import com.togamma.heladeria.service.seguridad.UsuarioService;
 
 import lombok.RequiredArgsConstructor;
@@ -30,6 +30,7 @@ public class UsuarioServiceImpl implements UsuarioService {
     private final EmpresaRepository empresaRepository;
     private final UsuarioRepository usuarioRepository;
     private final PasswordEncoder passwordEncoder;
+    private final ContextService contexto;
 
     @Override
     public UsuarioResponseDTO crearDesdeSuperadmin(UsuarioRequestDTO dto) {
@@ -73,23 +74,12 @@ public class UsuarioServiceImpl implements UsuarioService {
         if (usuarioRepository.findByUsername(dto.username()).isPresent()) {
             throw new RuntimeException("El usuario ya existe");
         }
-
-        String currentUsername = SecurityContextHolder.getContext().getAuthentication().getName();
-
-        Usuario usuarioLogueado = usuarioRepository.findByUsername(currentUsername)
-                .orElseThrow(() -> new RuntimeException("No se encontró al usuario de la sesión actual"));
         
-        Sucursal sucursalActual = usuarioLogueado.getSucursal();
-
-        if (sucursalActual == null) {
-             throw new RuntimeException("El usuario logueado no pertenece a ninguna sucursal");
-        }
-
         Usuario usuario = new Usuario();
         usuario.setUsername(dto.username());
         usuario.setPassword(passwordEncoder.encode(dto.password()));
         usuario.setRol(Rol.valueOf(dto.rol()));
-                usuario.setSucursal(sucursalActual); 
+                usuario.setSucursal(contexto.getSucursalLogueada()); 
 
         Usuario guardado = usuarioRepository.save(usuario);
         return UsuarioResponseDTO.mapToResponse(guardado);
