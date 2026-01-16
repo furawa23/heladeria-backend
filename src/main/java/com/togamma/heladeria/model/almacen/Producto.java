@@ -1,5 +1,6 @@
 package com.togamma.heladeria.model.almacen;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 import org.hibernate.annotations.SQLDelete;
@@ -26,7 +27,7 @@ public class Producto extends BaseEntity {
 
     private String nombre;
     private Boolean seVende;
-    private Long precioUnitarioVenta;
+    private BigDecimal precioUnitarioVenta;
     private String unidadBase;
 
     @ManyToOne(fetch = FetchType.LAZY)
