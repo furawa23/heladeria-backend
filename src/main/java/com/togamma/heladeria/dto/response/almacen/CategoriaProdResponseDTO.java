@@ -1,5 +1,11 @@
 package com.togamma.heladeria.dto.response.almacen;
 
-public record CategoriaProdResponseDTO() {
+import java.time.LocalDateTime;
 
-}
+public record CategoriaProdResponseDTO(
+    Long id,
+    LocalDateTime createdAt,
+    LocalDateTime updatedAt,
+    LocalDateTime deletedAt,
+    String nombre
+) {}

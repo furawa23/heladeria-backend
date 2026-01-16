@@ -25,7 +25,6 @@ public class EmpresaServiceImpl implements EmpresaService {
     private final EmpresaRepository empresaRepository;
 
     @Override
-    @Transactional
     public EmpresaResponseDTO crear(EmpresaRequestDTO dto) {
 
         Empresa empresa = new Empresa();
@@ -57,7 +56,6 @@ public class EmpresaServiceImpl implements EmpresaService {
     }
 
     @Override
-    @Transactional
     public EmpresaResponseDTO actualizar(Long id, EmpresaRequestDTO dto) {
 
         Empresa empresa = empresaRepository.findById(id)
@@ -72,7 +70,6 @@ public class EmpresaServiceImpl implements EmpresaService {
     }
 
     @Override
-    @Transactional
     public void eliminar(Long id) {
 
         if (!empresaRepository.existsById(id)) {
@@ -83,7 +80,6 @@ public class EmpresaServiceImpl implements EmpresaService {
     }
 
     @Override
-    @Transactional
     public void restaurar(Long id) {
         Empresa empresa = empresaRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("Empresa no encontrada"));

@@ -32,7 +32,6 @@ public class UsuarioServiceImpl implements UsuarioService {
     private final PasswordEncoder passwordEncoder;
 
     @Override
-    @Transactional
     public UsuarioResponseDTO crearDesdeSuperadmin(UsuarioRequestDTO dto) {
         
         if (usuarioRepository.findByUsername(dto.username()).isPresent()) {
@@ -69,7 +68,6 @@ public class UsuarioServiceImpl implements UsuarioService {
     }
 
     @Override
-    @Transactional
     public UsuarioResponseDTO crearDesdeEmpresa(RegisterRequestDTO dto) {
 
         if (usuarioRepository.findByUsername(dto.username()).isPresent()) {
@@ -140,7 +138,6 @@ public class UsuarioServiceImpl implements UsuarioService {
     }
 
     @Override
-    @Transactional
     public void eliminar(Long id) {
         if (!usuarioRepository.existsById(id)) {
             throw new RuntimeException("Usuario no encontrado");
@@ -149,7 +146,6 @@ public class UsuarioServiceImpl implements UsuarioService {
     }
 
     @Override
-    @Transactional
     public void restaurar(Long id) {
         Usuario usuario = usuarioRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));

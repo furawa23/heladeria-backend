@@ -4,13 +4,12 @@ import java.util.Optional;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.repository.JpaRepository;
 
 import com.togamma.heladeria.model.seguridad.Usuario;
+import com.togamma.heladeria.repository.SucursalScopedRepository;
 
-public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
+public interface UsuarioRepository extends SucursalScopedRepository<Usuario> {
 
     Optional<Usuario> findByUsername(String username);
-    Page<Usuario> findBySucursalId(Long idSucursal, Pageable pageable);
     Page<Usuario> findBySucursalEmpresaId(Long idEmpresa, Pageable pageable);
 }

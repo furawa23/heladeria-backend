@@ -24,7 +24,6 @@ public class SucursalServiceImpl implements SucursalService {
     private final EmpresaRepository empresaRepository;
 
     @Override
-    @Transactional
     public SucursalResponseDTO crear(SucursalRequestDTO dto) {
         Empresa empresa = empresaRepository.findById(dto.idEmpresa())
                 .orElseThrow(() -> new RuntimeException("Empresa no encontrada con ID: " + dto.idEmpresa()));
@@ -62,7 +61,6 @@ public class SucursalServiceImpl implements SucursalService {
     }
 
     @Override
-    @Transactional
     public SucursalResponseDTO actualizar(Long id, SucursalRequestDTO dto) {
         Sucursal sucursal = sucursalRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Sucursal no encontrada"));
@@ -81,7 +79,6 @@ public class SucursalServiceImpl implements SucursalService {
     }
 
     @Override
-    @Transactional
     public void eliminar(Long id) {
         if (!sucursalRepository.existsById(id)) {
             throw new RuntimeException("Sucursal no encontrada");
@@ -90,7 +87,6 @@ public class SucursalServiceImpl implements SucursalService {
     }
 
     @Override
-    @Transactional
     public void restaurar(Long id) {
         Sucursal sucursal = sucursalRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("Sucursal no encontrada"));
