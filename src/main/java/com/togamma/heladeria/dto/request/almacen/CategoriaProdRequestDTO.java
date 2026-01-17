@@ -1,5 +1,3 @@
 package com.togamma.heladeria.dto.request.almacen;
 
-public record CategoriaProdRequestDTO(String nombre) {
-
-}
+public record CategoriaProdRequestDTO(String nombre) {}

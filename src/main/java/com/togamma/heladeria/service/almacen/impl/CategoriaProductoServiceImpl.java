@@ -25,6 +25,10 @@ public class CategoriaProductoServiceImpl implements CategoriaProductoService {
     @Override
     public CategoriaProdResponseDTO crear(CategoriaProdRequestDTO dto) {
 
+        if (categoriaRepository.existsByNombreAndEmpresaId(dto.nombre(), contexto.getEmpresaLogueada().getId())) {
+            throw new RuntimeException("La categoría ya existe");
+        }
+
         CategoriaProducto categoria = new CategoriaProducto();
         categoria.setNombre(dto.nombre());
         categoria.setEmpresa(contexto.getEmpresaLogueada());
@@ -43,7 +47,7 @@ public class CategoriaProductoServiceImpl implements CategoriaProductoService {
     @Override
     @Transactional(readOnly = true)
     public CategoriaProdResponseDTO obtenerPorId(Long id) {
-        CategoriaProducto categoria = categoriaRepository.findById(id)
+        CategoriaProducto categoria = categoriaRepository.findByIdAndEmpresaId(id, contexto.getEmpresaLogueada().getId())
                 .orElseThrow(() -> new RuntimeException("Categoria de Producto no encontrada"));
 
         return mapToResponse(categoria);
@@ -52,12 +56,8 @@ public class CategoriaProductoServiceImpl implements CategoriaProductoService {
     @Override
     public CategoriaProdResponseDTO actualizar(Long id, CategoriaProdRequestDTO dto) {
     
-        CategoriaProducto categoria = categoriaRepository.findById(id)
+        CategoriaProducto categoria = categoriaRepository.findByIdAndEmpresaId(id, contexto.getEmpresaLogueada().getId())
                 .orElseThrow(() -> new RuntimeException("Categoria de Producto no encontrada"));
-
-        if (!categoria.getEmpresa().getId().equals(contexto.getEmpresaLogueada().getId())) {
-            throw new RuntimeException("No tienes permiso para modificar esta categoría");
-        }
 
         categoria.setNombre(dto.nombre());
     
@@ -65,11 +65,10 @@ public class CategoriaProductoServiceImpl implements CategoriaProductoService {
     
         return mapToResponse(actualizada);
     }
-    
 
     @Override
     public void eliminar(Long id) {
-        if (!categoriaRepository.existsById(id)) {
+        if (!categoriaRepository.existsByIdAndEmpresaId(id, contexto.getEmpresaLogueada().getId())) {
             throw new RuntimeException("Categoria de Producto no encontrada");
         }
         categoriaRepository.deleteById(id);
@@ -80,7 +79,6 @@ public class CategoriaProductoServiceImpl implements CategoriaProductoService {
             s.getId(),
             s.getCreatedAt(),
             s.getUpdatedAt(),
-            s.getDeletedAt(),
             s.getNombre()
         );
     }

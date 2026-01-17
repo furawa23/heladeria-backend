@@ -37,7 +37,7 @@ public class ContextService {
 
     public Empresa getEmpresaLogueada() {
         
-        Empresa empresaActual = getUsuarioLogueado().getSucursal().getEmpresa();
+        Empresa empresaActual = getUsuarioLogueado().getEmpresa();
 
         if (empresaActual == null) {
              throw new RuntimeException("El usuario logueado no pertenece a ninguna empresa");

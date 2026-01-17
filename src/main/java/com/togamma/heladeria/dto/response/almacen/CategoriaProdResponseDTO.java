@@ -6,6 +6,5 @@ public record CategoriaProdResponseDTO(
     Long id,
     LocalDateTime createdAt,
     LocalDateTime updatedAt,
-    LocalDateTime deletedAt,
     String nombre
 ) {}

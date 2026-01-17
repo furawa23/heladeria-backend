@@ -23,9 +23,21 @@ public class ProductoController {
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 
-    @GetMapping
+    @GetMapping("/todos")
     public ResponseEntity<Page<ProductoResponseDTO>> listarTodas(Pageable pageable) {
         Page<ProductoResponseDTO> response = productoService.listarTodas(pageable);
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/insumos")
+    public ResponseEntity<Page<ProductoResponseDTO>> listarInsumos(Pageable pageable) {
+        Page<ProductoResponseDTO> response = productoService.listarSoloInsumos(pageable);
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/venta")
+    public ResponseEntity<Page<ProductoResponseDTO>> listarProductos(Pageable pageable) {
+        Page<ProductoResponseDTO> response = productoService.listarSoloVenta(pageable);
         return ResponseEntity.ok(response);
     }
 

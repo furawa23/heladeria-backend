@@ -111,7 +111,8 @@ public class EmpresaServiceImpl implements EmpresaService {
                 s.getUpdatedAt(),
                 s.getDeletedAt(),
                 s.getNombre(),
-                s.getDireccion()))
+                s.getDireccion(),
+                s.getEmpresa().getRazonSocial()))
             .toList();
     }
 }

@@ -8,5 +8,6 @@ public record SucursalResponseDTO (
     LocalDateTime updatedAt,
     LocalDateTime deletedAt,
     String nombre,
-    String direccion
+    String direccion,
+    String nombreEmpresa
 ) {}

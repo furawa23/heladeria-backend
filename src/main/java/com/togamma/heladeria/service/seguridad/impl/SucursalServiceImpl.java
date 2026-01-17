@@ -102,7 +102,8 @@ public class SucursalServiceImpl implements SucursalService {
             s.getUpdatedAt(),
             s.getDeletedAt(),
             s.getNombre(),
-            s.getDireccion()
+            s.getDireccion(),
+            s.getEmpresa().getRazonSocial()
         );
     }
 }
