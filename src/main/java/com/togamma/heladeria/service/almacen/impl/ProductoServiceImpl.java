@@ -73,6 +73,12 @@ public class ProductoServiceImpl implements ProductoService {
     }
 
     @Override
+    public Page<ProductoResponseDTO> listarPorCategoria(Long idCategoria, Pageable pageable) {
+        return productoRepository.findByCategoriaIdAndEmpresaId(idCategoria, contexto.getEmpresaLogueada().getId(), pageable)
+                .map(this::mapToResponse);
+    }
+
+    @Override
     @Transactional(readOnly = true)
     public ProductoResponseDTO obtenerPorId(Long id) {
         Producto producto = productoRepository.findByIdAndEmpresaId(id, contexto.getEmpresaLogueada().getId())

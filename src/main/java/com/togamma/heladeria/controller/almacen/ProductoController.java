@@ -41,6 +41,12 @@ public class ProductoController {
         return ResponseEntity.ok(response);
     }
 
+    @GetMapping("/categoria/{idCat}")
+    public ResponseEntity<Page<ProductoResponseDTO>> listarPorCategoria(@PathVariable Long idCat, Pageable pageable) {
+        Page<ProductoResponseDTO> response = productoService.listarPorCategoria(idCat, pageable);
+        return ResponseEntity.ok(response);
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<ProductoResponseDTO> obtenerPorId(@PathVariable Long id) {
         ProductoResponseDTO response = productoService.obtenerPorId(id);

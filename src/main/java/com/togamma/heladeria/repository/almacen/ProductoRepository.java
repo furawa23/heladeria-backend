@@ -11,5 +11,5 @@ public interface ProductoRepository extends EmpresaScopedRepository<Producto> {
     Page<Producto> findByEmpresaIdAndSeVendeTrue(Long id, Pageable pageable);
     Page<Producto> findByEmpresaIdAndSeVendeFalse(Long id, Pageable pageable);
     Boolean existsByNombreAndEmpresaId(String nombre, Long id);
-    Page<Producto> findByCategoria(Pageable pageable);
+    Page<Producto> findByCategoriaIdAndEmpresaId(Long idCategoria, Long idEmpresa, Pageable pageable);
 }
