@@ -34,7 +34,7 @@ public class Producto extends BaseEntity {
     @JoinColumn(name = "id_categoria")
     private CategoriaProducto categoria;
 
-    @OneToMany(mappedBy = "producto", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "producto", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<RecetaItem> receta;
 
     @ManyToOne(fetch = FetchType.LAZY)

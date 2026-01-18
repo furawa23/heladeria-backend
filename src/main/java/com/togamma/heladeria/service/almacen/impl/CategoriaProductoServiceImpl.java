@@ -59,10 +59,15 @@ public class CategoriaProductoServiceImpl implements CategoriaProductoService {
         CategoriaProducto categoria = categoriaRepository.findByIdAndEmpresaId(id, contexto.getEmpresaLogueada().getId())
                 .orElseThrow(() -> new RuntimeException("Categoria de Producto no encontrada"));
 
+        if (!categoria.getNombre().equalsIgnoreCase(dto.nombre())) {
+            if (categoriaRepository.existsByNombreAndEmpresaId(dto.nombre(), contexto.getEmpresaLogueada().getId())) {
+                throw new RuntimeException("Ya existe una categoría con ese nombre");
+            }
+        }
+        
         categoria.setNombre(dto.nombre());
     
         CategoriaProducto actualizada = categoriaRepository.save(categoria);
-    
         return mapToResponse(actualizada);
     }
 

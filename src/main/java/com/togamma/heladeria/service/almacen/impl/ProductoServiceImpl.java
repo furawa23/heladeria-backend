@@ -93,6 +93,12 @@ public class ProductoServiceImpl implements ProductoService {
         Producto producto = productoRepository.findByIdAndEmpresaId(id, contexto.getEmpresaLogueada().getId())
                 .orElseThrow(() -> new RuntimeException("Producto no encontrada"));
 
+        if (!producto.getNombre().equalsIgnoreCase(dto.nombre())) {
+            if (productoRepository.existsByNombreAndEmpresaId(dto.nombre(), contexto.getEmpresaLogueada().getId())) {
+                throw new RuntimeException("Ya existe un producto con ese nombre");
+            }
+        }
+        
         mapToEntity(producto, dto);
 
         if (Boolean.TRUE.equals(dto.seVende())) {
