@@ -20,7 +20,8 @@ import lombok.EqualsAndHashCode;
 public class DetalleVenta extends BaseEntity {
 
     private Integer cantidad;
-    private Long subtotal;
+    private Double precioUnitario;
+    private Double subtotal;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_venta")
