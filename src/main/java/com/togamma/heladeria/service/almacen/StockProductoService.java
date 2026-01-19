@@ -10,5 +10,6 @@ public interface StockProductoService {
     StockProdResponseDTO registrarIngreso(StockProdRequestDTO dto);
     StockProdResponseDTO ajustarCantidad(Long id, Integer nuevaCantidad);
     Page<StockProdResponseDTO> listarPorProducto(Long idProducto, Pageable pageable);
+    StockProdResponseDTO obtenerPorProductoYSucursal(Long idProducto);
     StockProdResponseDTO obtenerPorId(Long id);
 }

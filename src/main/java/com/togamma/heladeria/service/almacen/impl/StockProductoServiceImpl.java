@@ -106,6 +106,17 @@ public class StockProductoServiceImpl implements StockProductoService {
 
     @Override
     @Transactional(readOnly = true)
+    public StockProdResponseDTO obtenerPorProductoYSucursal(Long idProducto) {
+
+        return stockRepository.findByProductoIdAndSucursalId(idProducto, contexto.getSucursalLogueada().getId())
+                .map(this::mapToResponse)
+                .orElseGet(() -> {
+                    throw new RuntimeException("No existe registro de stock para este producto en la sucursal indicada");
+                });
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public StockProdResponseDTO obtenerPorId(Long id) {
         StockProducto stock = stockRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Stock no encontrado"));
