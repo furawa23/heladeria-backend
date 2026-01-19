@@ -2,6 +2,8 @@ package com.togamma.heladeria.service.almacen.impl;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -121,7 +123,6 @@ public class ProductoServiceImpl implements ProductoService {
     }
 
     private void actualizarReceta(Producto producto, List<RecetaItemRequestDTO> recetaDTO) {
-
         if (producto.getReceta() == null) {
             producto.setReceta(new ArrayList<>());
         } else {
@@ -132,18 +133,38 @@ public class ProductoServiceImpl implements ProductoService {
             throw new RuntimeException("Un producto vendible debe tener receta");
         }
 
+        // 1. Extraer todos los IDs de los insumos solicitados
+        List<Long> insumoIds = recetaDTO.stream()
+                .map(RecetaItemRequestDTO::insumoId)
+                .toList();
+
+        // 2. Buscar todos los insumos en UNA sola consulta a la BD
+        List<Producto> insumosEncontrados = productoRepository.findByIdInAndEmpresaId(insumoIds, contexto.getEmpresaLogueada().getId());
+
+        // 3. Convertir a un Map para búsqueda rápida en memoria
+        // Map<ID, Producto>
+        Map<Long, Producto> mapaInsumos = insumosEncontrados.stream()
+                .collect(Collectors.toMap(Producto::getId, p -> p));
+
+        // 4. Iterar y validar en memoria (sin ir a la BD)
         for (RecetaItemRequestDTO item : recetaDTO) {
+            
+            Producto insumo = mapaInsumos.get(item.insumoId());
 
-            Producto insumo = productoRepository
-                .findByIdAndEmpresaId(item.insumoId(), contexto.getEmpresaLogueada().getId())
-                .orElseThrow(() -> new RuntimeException("Insumo inválido"));
+            if (insumo == null) {
+                throw new RuntimeException("Insumo con ID " + item.insumoId() + " no encontrado o no autorizado");
+            }
 
-            if (insumo.getSeVende()) {
-                throw new RuntimeException("Un insumo no puede ser un producto vendible");
+            if (Boolean.TRUE.equals(insumo.getSeVende())) {
+                throw new RuntimeException("El insumo '" + insumo.getNombre() + "' no es válido porque es un producto de venta");
             }
 
             if (insumo.getId().equals(producto.getId())) {
-                throw new RuntimeException("Un producto no puede ser insumo de sí mismo");
+                throw new RuntimeException("Referencia circular: El producto no puede ser insumo de sí mismo");
+            }
+
+            if (item.cantidadUsada() <= 0) {
+                throw new RuntimeException("la cantidad no puede ser menor a 0");
             }
 
             RecetaItem recetaItem = new RecetaItem();
@@ -175,12 +196,19 @@ public class ProductoServiceImpl implements ProductoService {
                 s.getId(),
                 s.getInsumo().getId(),
                 s.getInsumo().getNombre(),
-                s.getProducto().getUnidadBase(),
+                s.getInsumo().getUnidadBase(),
                 s.getCantidadUsada()))
             .toList();
     }
 
     private void mapToEntity(Producto producto, ProductoRequestDTO dto) {
+
+        if (Boolean.TRUE.equals(dto.seVende())) {
+            if (dto.precioUnitarioVenta() == null || dto.precioUnitarioVenta() <= 0) {
+                throw new RuntimeException("El precio de venta debe ser mayor a 0 para productos vendibles");
+            }
+        }
+
         producto.setNombre(dto.nombre());
         producto.setSeVende(dto.seVende());
         producto.setPrecioUnitarioVenta(dto.precioUnitarioVenta());

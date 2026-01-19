@@ -1,5 +1,6 @@
 package com.togamma.heladeria.repository.almacen;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.domain.Page;
@@ -24,4 +25,5 @@ public interface ProductoRepository extends EmpresaScopedRepository<Producto> {
     @Override
     @EntityGraph(attributePaths = {"categoria", "receta.insumo"})
     Optional<Producto> findByIdAndEmpresaId(Long id, Long idEmpresa);
+    List<Producto> findByIdInAndEmpresaId(List<Long> idsInsumo, Long idEmpresa);
 }
