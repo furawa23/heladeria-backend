@@ -1,6 +1,7 @@
 package com.togamma.heladeria.model.compra;
 
 import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.SQLRestriction;
 
 import com.togamma.heladeria.model.BaseEntity;
 import com.togamma.heladeria.model.almacen.PresentacionProducto;
@@ -17,11 +18,12 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode(callSuper = false)
 @Entity
 @SQLDelete(sql = "UPDATE detalle_compra SET deleted_at = NOW() where id = ?")
+@SQLRestriction("deleted_at IS NULL")
 public class DetalleCompra extends BaseEntity {
 
     private Integer cantidad;
-    private Long precioUnitarioCompra;
-    private Long subtotal;
+    private Double precioUnitarioCompra;
+    private Double subtotal;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_compra")

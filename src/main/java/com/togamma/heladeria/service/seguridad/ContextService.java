@@ -17,22 +17,15 @@ import lombok.RequiredArgsConstructor;
 public class ContextService {
 
     private final UsuarioRepository usuarioRepository;
-    private Usuario usuarioCache;
 
     public Usuario getUsuarioLogueado() {
-        if (usuarioCache != null) {
-                return usuarioCache;
-        }
-
         String username = SecurityContextHolder.getContext()
                 .getAuthentication()
                 .getName();
 
-        usuarioCache = usuarioRepository.findByUsername(username)
+        return usuarioRepository.findByUsername(username)
                 .orElseThrow(() ->
                         new RuntimeException("No se encontró al usuario de la sesión actual"));
-        
-        return usuarioCache;
     }
 
     public Empresa getEmpresaLogueada() {

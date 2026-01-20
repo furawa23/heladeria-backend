@@ -66,17 +66,24 @@ public class PresentacionProductoServiceImpl implements PresentacionProductoServ
     @Override
     @Transactional(readOnly = true)
     public PresentacionProdResponseDTO obtenerPorId(Long id) {
-        PresentacionProducto presentacion = presentacionRepository.findByIdAndEmpresaId(id, contexto.getEmpresaLogueada().getId())
+        PresentacionProducto presentacion = presentacionRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Presentación de Producto no encontrada"));
-
+        
+        if(contexto.getEmpresaLogueada().getId() != presentacion.getProducto().getEmpresa().getId()) {
+            throw new RuntimeException("No tienes permiso");       
+        }
         return mapToResponse(presentacion);
     }
 
     @Override
     public PresentacionProdResponseDTO actualizar(Long id, PresentacionProdRequestDTO dto) {
     
-        PresentacionProducto presentacion = presentacionRepository.findByIdAndEmpresaId(id, contexto.getEmpresaLogueada().getId())
+        PresentacionProducto presentacion = presentacionRepository.findById(id)
                                             .orElseThrow(() -> new RuntimeException("Presentación de Producto no encontrada"));
+
+        if(contexto.getEmpresaLogueada().getId() != presentacion.getProducto().getEmpresa().getId()) {
+            throw new RuntimeException("No tienes permiso");       
+        }
     
         if (!presentacion.getNombre().equalsIgnoreCase(dto.nombre())) {
             if(presentacionRepository.existsByNombreAndProductoId(dto.nombre(), dto.idProducto())) {
@@ -103,9 +110,17 @@ public class PresentacionProductoServiceImpl implements PresentacionProductoServ
 
     @Override
     public void eliminar(Long id) {
-        if (!presentacionRepository.existsByIdAndEmpresaId(id, contexto.getEmpresaLogueada().getId())) {
+        if (!presentacionRepository.existsById(id)) {
             throw new RuntimeException("Presentación de Producto no encontrada");
         }
+        
+        PresentacionProducto presentacion = presentacionRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Presentación de Producto no encontrada"));
+
+        if(contexto.getEmpresaLogueada().getId() != presentacion.getProducto().getEmpresa().getId()) {
+            throw new RuntimeException("No tienes permiso");       
+        }
+        
         presentacionRepository.deleteById(id);
     }
 

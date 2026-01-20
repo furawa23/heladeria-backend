@@ -14,7 +14,7 @@ public interface PresentacionProductoRepository extends JpaRepository<Presentaci
     @EntityGraph(attributePaths = {"producto"})
     Page<PresentacionProducto> findByProductoId(Long idProducto, Pageable pageable);
     Boolean existsByNombreAndProductoId(String nombre, Long id);
+    @Override
     @EntityGraph(attributePaths = {"producto"})
-    Optional<PresentacionProducto> findByIdAndEmpresaId(Long id, Long idEmpresa);
-    Boolean existsByIdAndEmpresaId(Long id, Long idEmpresa);
+    Optional<PresentacionProducto> findById(Long id);
 }

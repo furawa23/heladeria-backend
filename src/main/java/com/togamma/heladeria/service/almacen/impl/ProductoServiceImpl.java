@@ -129,10 +129,6 @@ public class ProductoServiceImpl implements ProductoService {
             producto.getReceta().clear();
         }
 
-        if (recetaDTO == null || recetaDTO.isEmpty()) {
-            throw new RuntimeException("Un producto vendible debe tener receta");
-        }
-
         // 1. Extraer todos los IDs de los insumos solicitados
         List<Long> insumoIds = recetaDTO.stream()
                 .map(RecetaItemRequestDTO::insumoId)
