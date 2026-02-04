@@ -62,11 +62,15 @@ public class ProveedorServiceImpl implements ProveedorService {
         Proveedor proveedor = proveedorRepository.findByIdAndEmpresaId(id, contexto.getEmpresaLogueada().getId())
                 .orElseThrow(() -> new RuntimeException("Proveedor no encontrado"));
 
-        if (!proveedor.getRazonSocial().equalsIgnoreCase(dto.razonSocial())) {
-            if (proveedorRepository.existsByRazonSocialAndEmpresaId(dto.razonSocial(), contexto.getEmpresaLogueada().getId())
-                || proveedorRepository.existsByRucAndEmpresaId(dto.ruc(), contexto.getEmpresaLogueada().getId())) {
-                throw new RuntimeException("Ya existe un proveedor igual");
-            }
+        if (
+            proveedorRepository.existsByRazonSocialAndEmpresaIdAndIdNot(
+                dto.razonSocial(), contexto.getEmpresaLogueada().getId(), id
+            )
+            || proveedorRepository.existsByRucAndEmpresaIdAndIdNot(
+                dto.ruc(), contexto.getEmpresaLogueada().getId(), id
+            )
+        ) {
+            throw new RuntimeException("Ya existe un proveedor igual");
         }
         
         proveedor.setRazonSocial(dto.razonSocial());

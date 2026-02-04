@@ -7,5 +7,6 @@ public record PresentacionProdResponseDTO(
     LocalDateTime createdAt,
     String nombre,
     Integer factor,
+    Double precioVenta,
     String nombreProd
 ) {}

@@ -11,4 +11,5 @@ import com.togamma.heladeria.model.BaseEntity;
 public interface SucursalScopedRepository<T extends BaseEntity> extends JpaRepository<T, Long> {
 
     Page<T> findBySucursalId(Long idSucursal, Pageable pageable);
+    Boolean existsByIdAndSucursalId(Long id, Long idSucursal);
 }

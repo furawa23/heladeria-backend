@@ -21,6 +21,7 @@ public class PresentacionProducto extends BaseEntity {
 
     private String nombre;
     private Integer factor; //a cuantas unidades base del producto equivale
+    private Double precioVenta;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_producto")

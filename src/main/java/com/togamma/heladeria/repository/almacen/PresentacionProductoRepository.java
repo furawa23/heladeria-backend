@@ -1,5 +1,6 @@
 package com.togamma.heladeria.repository.almacen;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.domain.Page;
@@ -17,4 +18,6 @@ public interface PresentacionProductoRepository extends JpaRepository<Presentaci
     @Override
     @EntityGraph(attributePaths = {"producto"})
     Optional<PresentacionProducto> findById(Long id);
+    @EntityGraph(attributePaths = {"producto"})
+    List<PresentacionProducto> findByIdInAndProductoEmpresaId(List<Long> ids, Long idEmpresa);
 }

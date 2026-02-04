@@ -43,6 +43,11 @@ public class PresentacionProductoServiceImpl implements PresentacionProductoServ
 
         presentacion.setNombre(dto.nombre());
         presentacion.setFactor(dto.factor());
+
+        if(productoActual.getSeVende() == true) {
+            presentacion.setPrecioVenta(dto.precioVenta());
+        }
+
         presentacion.setProducto(productoActual);
 
         PresentacionProducto guardada = presentacionRepository.save(presentacion);
@@ -130,6 +135,7 @@ public class PresentacionProductoServiceImpl implements PresentacionProductoServ
             s.getCreatedAt(),
             s.getNombre(),
             s.getFactor(),
+            s.getPrecioVenta(),
             s.getProducto().getNombre()
         );
     }

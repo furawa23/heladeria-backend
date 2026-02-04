@@ -6,4 +6,6 @@ import com.togamma.heladeria.repository.EmpresaScopedRepository;
 public interface ProveedorRepository extends EmpresaScopedRepository<Proveedor> {
     Boolean existsByRazonSocialAndEmpresaId(String nombre, Long id);
     Boolean existsByRucAndEmpresaId(String nombre, Long id);
+    Boolean existsByRazonSocialAndEmpresaIdAndIdNot(String razonSocial, Long empresaId, Long id);
+    Boolean existsByRucAndEmpresaIdAndIdNot(String ruc, Long empresaId, Long id); 
 }
