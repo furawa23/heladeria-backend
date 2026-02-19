@@ -1,5 +1,7 @@
 package com.togamma.heladeria.repository;
 
+import java.util.Optional;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -12,4 +14,5 @@ public interface SucursalScopedRepository<T extends BaseEntity> extends JpaRepos
 
     Page<T> findBySucursalId(Long idSucursal, Pageable pageable);
     Boolean existsByIdAndSucursalId(Long id, Long idSucursal);
+    Optional<T> findByIdAndSucursalId(Long id, Long idSucursal);
 }
