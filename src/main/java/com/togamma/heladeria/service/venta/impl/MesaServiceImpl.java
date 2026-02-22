@@ -32,6 +32,7 @@ public class MesaServiceImpl implements MesaService {
         Mesa mesa = new Mesa();
         mesa.setNumero(dto.numero());
         mesa.setSucursal(contexto.getSucursalLogueada());
+        mesa.setLibre(true);
 
         Mesa guardada = mesaRepository.save(mesa);
         return mapToResponse(guardada);
