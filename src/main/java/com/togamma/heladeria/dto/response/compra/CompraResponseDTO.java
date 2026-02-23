@@ -8,7 +8,7 @@ public record CompraResponseDTO(
     LocalDateTime createdAt,
     String descripcion,
     String numeroComprobante,
-    Long total,
+    Double total,
     String estado,
     String proveedor,
     List<DetCompraResponseDTO> detalles

@@ -28,6 +28,7 @@ public class Venta extends BaseEntity {
     @Enumerated(EnumType.STRING)
     private EstadoVenta estado;
     
+    private String numeroComprobante;
     private Double total;
 
     @ManyToOne(fetch = FetchType.LAZY)

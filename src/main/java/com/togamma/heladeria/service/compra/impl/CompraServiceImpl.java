@@ -83,11 +83,8 @@ public class CompraServiceImpl implements CompraService {
         Compra compra = compraRepository.findByIdAndSucursalId(id, contexto.getSucursalLogueada().getId())
                 .orElseThrow(() -> new RuntimeException("Compra no encontrada"));
 
-        // Mapeamos datos básicos (Proveedor, Sucursal, Descripción, Comprobante)
         mapToEntity(compra, dto);
 
-        // Actualizamos los detalles (limpiar y volver a agregar)
-        // Nota: Al hacer clear(), JPA manejará los deletes gracias a orphanRemoval=true en la entidad
         gestionarDetalles(compra, dto.detalles());
 
         Compra actualizada = compraRepository.save(compra);
@@ -103,12 +100,6 @@ public class CompraServiceImpl implements CompraService {
         compraRepository.deleteById(id);
     }
 
-    /**
-     * Lógica central para manejar los detalles de la compra.
-     * 1. Limpia la lista actual.
-     * 2. Busca todos los productos en una sola consulta (Bulk Fetch).
-     * 3. Calcula subtotales y total general.
-     */
     private void gestionarDetalles(Compra compra, List<DetCompraRequestDTO> detallesDTO) {
         if (compra.getDetalles() == null) {
             compra.setDetalles(new ArrayList<>());
@@ -117,7 +108,7 @@ public class CompraServiceImpl implements CompraService {
         }
 
         if (detallesDTO == null || detallesDTO.isEmpty()) {
-            compra.setTotal(0L);
+            compra.setTotal(0.0);
             return;
         }
 
@@ -126,21 +117,18 @@ public class CompraServiceImpl implements CompraService {
                 .map(DetCompraRequestDTO::idProducto)
                 .toList();
 
-        // Filtramos los nulos porque puede haber compras sin presentación (unidad base)
         List<Long> presentacionIds = detallesDTO.stream()
-                .map(DetCompraRequestDTO::idPresentacion) // Asumo que agregaste esto al DTO
+                .map(DetCompraRequestDTO::idPresentacion)
                 .filter(id -> id != null)
                 .distinct() // Evitar duplicados
                 .toList();
 
-        // 2. Buscar en Base de Datos (Bulk Fetch)
-        // Productos
+        // 2. Buscar en Base de Datos
         List<Producto> productosEncontrados = productoRepository.findByIdInAndEmpresaId(
                 productoIds, contexto.getEmpresaLogueada().getId());
         Map<Long, Producto> mapaProductos = productosEncontrados.stream()
                 .collect(Collectors.toMap(Producto::getId, p -> p));
 
-        // Presentaciones (Solo si hay alguna solicitada)
         Map<Long, PresentacionProducto> mapaPresentaciones;
         if (!presentacionIds.isEmpty()) {
             List<PresentacionProducto> presentacionesEncontradas = presentacionRepository.findByIdInAndProductoEmpresaId(
@@ -153,7 +141,6 @@ public class CompraServiceImpl implements CompraService {
 
         double totalCalculado = 0.0;
 
-        // 3. Iterar y Validar
         for (DetCompraRequestDTO itemDto : detallesDTO) {
             Producto producto = mapaProductos.get(itemDto.idProducto());
 
@@ -171,17 +158,13 @@ public class CompraServiceImpl implements CompraService {
             detalle.setCantidad(itemDto.cantidad());
             detalle.setPrecioUnitarioCompra(itemDto.precioUnitario());
 
-            // --- LÓGICA DE PRESENTACIÓN ---
             if (itemDto.idPresentacion() != null) {
                 PresentacionProducto presentacion = mapaPresentaciones.get(itemDto.idPresentacion());
 
-                // Validación A: ¿Existe?
                 if (presentacion == null) {
                     throw new RuntimeException("La presentación solicitada no existe o no pertenece a su empresa");
                 }
 
-                // Validación B: ¿Pertenece al producto?
-                // Es vital asegurar que la presentación "Caja x 12" sea hija del producto "Leche"
                 if (!presentacion.getProducto().getId().equals(producto.getId())) {
                     throw new RuntimeException("La presentación '" + presentacion.getNombre() + 
                         "' no corresponde al producto '" + producto.getNombre() + "'");
@@ -189,10 +172,7 @@ public class CompraServiceImpl implements CompraService {
 
                 detalle.setPresentacion(presentacion);
             }
-            // -----------------------------
 
-            // Calculo de subtotal
-            // Nota: Se asume que el precio unitario ingresado es POR LA PRESENTACIÓN (ej: precio de la caja)
             double subtotal = itemDto.cantidad() * itemDto.precioUnitario();
             detalle.setSubtotal(subtotal);
 
@@ -200,15 +180,14 @@ public class CompraServiceImpl implements CompraService {
             totalCalculado += subtotal;
         }
 
-        compra.setTotal((long) totalCalculado);
+        compra.setTotal(totalCalculado);
     }
 
     private void mapToEntity(Compra compra, CompraRequestDTO dto) {
         compra.setDescripcion(dto.descripcion());
         compra.setNumeroComprobante(dto.numeroComprobante());
-        compra.setEstado("REGISTRADO"); // O el estado inicial que desees
+        compra.setEstado("REGISTRADO");
 
-        // Vincular Proveedor
         if (dto.idProveedor() != null) {
             Proveedor proveedor = proveedorRepository.findByIdAndEmpresaId(dto.idProveedor(), contexto.getEmpresaLogueada().getId())
                     .orElseThrow(() -> new RuntimeException("Proveedor no encontrado"));

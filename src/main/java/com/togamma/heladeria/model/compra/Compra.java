@@ -27,7 +27,7 @@ public class Compra extends BaseEntity {
 
     private String descripcion;
     private String numeroComprobante;
-    private Long total;
+    private Double total;
     private String estado;
 
     @ManyToOne(fetch = FetchType.LAZY)
