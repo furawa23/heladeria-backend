@@ -3,7 +3,6 @@ package com.togamma.heladeria.service.compra.impl;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -21,8 +20,7 @@ import com.togamma.heladeria.model.almacen.PresentacionProducto;
 import com.togamma.heladeria.model.almacen.Producto;
 import com.togamma.heladeria.repository.compra.CompraRepository;
 import com.togamma.heladeria.repository.compra.ProveedorRepository;
-import com.togamma.heladeria.repository.almacen.PresentacionProductoRepository;
-import com.togamma.heladeria.repository.almacen.ProductoRepository;
+import com.togamma.heladeria.service.almacen.AlmacenQueryService;
 import com.togamma.heladeria.service.compra.CompraService;
 import com.togamma.heladeria.service.seguridad.ContextService;
 
@@ -35,9 +33,8 @@ public class CompraServiceImpl implements CompraService {
 
     private final CompraRepository compraRepository;
     private final ProveedorRepository proveedorRepository;
-    private final ProductoRepository productoRepository;
-    private final PresentacionProductoRepository presentacionRepository;
     private final ContextService contexto;
+    private final AlmacenQueryService almacenQuery;
 
     @Override
     public CompraResponseDTO crear(CompraRequestDTO dto) {
@@ -124,21 +121,9 @@ public class CompraServiceImpl implements CompraService {
                 .toList();
 
         // 2. Buscar en Base de Datos
-        List<Producto> productosEncontrados = productoRepository.findByIdInAndEmpresaId(
-                productoIds, contexto.getEmpresaLogueada().getId());
-        Map<Long, Producto> mapaProductos = productosEncontrados.stream()
-                .collect(Collectors.toMap(Producto::getId, p -> p));
-
-        Map<Long, PresentacionProducto> mapaPresentaciones;
-        if (!presentacionIds.isEmpty()) {
-            List<PresentacionProducto> presentacionesEncontradas = presentacionRepository.findByIdInAndProductoEmpresaId(
-                    presentacionIds, contexto.getEmpresaLogueada().getId());
-            mapaPresentaciones = presentacionesEncontradas.stream()
-                    .collect(Collectors.toMap(PresentacionProducto::getId, p -> p));
-        } else {
-            mapaPresentaciones = Map.of();
-        }
-
+        Long empresaId = contexto.getEmpresaLogueada().getId();
+        Map<Long, Producto> mapaProductos = almacenQuery.obtenerProductosEnMapa(productoIds, empresaId);
+        Map<Long, PresentacionProducto> mapaPresentaciones = almacenQuery.obtenerPresentacionesEnMapa(presentacionIds, empresaId);
         double totalCalculado = 0.0;
 
         for (DetCompraRequestDTO itemDto : detallesDTO) {
