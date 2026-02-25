@@ -12,4 +12,6 @@ public interface CompraService {
     CompraResponseDTO obtenerPorId(Long id);
     CompraResponseDTO actualizar(Long id, CompraRequestDTO dto);
     void eliminar(Long id);
+    void cancelar(Long id);
+    void confirmar(Long id);
 }

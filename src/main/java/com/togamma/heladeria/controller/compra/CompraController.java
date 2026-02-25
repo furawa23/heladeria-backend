@@ -41,6 +41,18 @@ public class CompraController {
         return ResponseEntity.ok(response);
     }
 
+    @PutMapping("/{id}/cancelar")
+    public ResponseEntity<Void> cancelar(@PathVariable Long id) {
+        compraService.cancelar(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PutMapping("/{id}/confirmar")
+    public ResponseEntity<Void> confirmar(@PathVariable Long id) {
+        compraService.confirmar(id);
+        return ResponseEntity.noContent().build();
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> eliminar(@PathVariable Long id) {
         compraService.eliminar(id);

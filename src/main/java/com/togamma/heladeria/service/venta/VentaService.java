@@ -13,4 +13,6 @@ public interface VentaService {
     VentaResponseDTO obtenerPorId(Long id);
     VentaResponseDTO actualizar(Long id, VentaRequestDTO dto);
     void eliminar(Long id);
+    void cancelar(Long id);
+    void cobrar(Long id);
 }

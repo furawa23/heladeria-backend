@@ -11,6 +11,8 @@ import com.togamma.heladeria.model.seguridad.Sucursal;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
@@ -28,7 +30,9 @@ public class Compra extends BaseEntity {
     private String descripcion;
     private String numeroComprobante;
     private Double total;
-    private String estado;
+
+    @Enumerated(EnumType.STRING)
+    private EstadoCompra estado;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_sucursal")

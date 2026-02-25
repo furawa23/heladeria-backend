@@ -57,35 +57,121 @@ public class VentaServiceImpl implements VentaService {
 
     @Override
     public VentaResponseDTO crearEnMesa(VentaRequestDTO dto) {
-        if (dto.idMesa() != null) {
-            crearRapida(dto);
+        if (dto.idMesa() == null) {
+            throw new RuntimeException("No hay mesa asignada");
         }
 
-        throw new RuntimeException("No hay mesa asignada");
+        Mesa mesa = mesaRepository.findByIdAndSucursalId(dto.idMesa(), contexto.getSucursalLogueada().getId())
+                    .orElseThrow(() -> new RuntimeException("No existe la mesa"));
+        
+        if (!mesa.getLibre()) {
+            throw new RuntimeException("mesa ocupada");
+        }
+
+        mesa.setLibre(false);
+        
+        return crearRapida(dto);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Page<VentaResponseDTO> listarTodas(Pageable pageable) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'listarTodas'");
+        return ventaRepository.findBySucursalId(contexto.getSucursalLogueada().getId(), pageable)
+                .map(this::mapToResponse);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public VentaResponseDTO obtenerPorId(Long id) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'obtenerPorId'");
+        Venta venta = ventaRepository.findByIdAndSucursalId(id, contexto.getSucursalLogueada().getId())
+                .orElseThrow(() -> new RuntimeException("Venta no encontrada"));
+        return mapToResponse(venta);
     }
 
     @Override
     public VentaResponseDTO actualizar(Long id, VentaRequestDTO dto) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'actualizar'");
+        Venta venta = ventaRepository.findByIdAndSucursalId(id, contexto.getSucursalLogueada().getId())
+                .orElseThrow(() -> new RuntimeException("Venta no encontrada"));
+
+        if (venta.getEstado() != EstadoVenta.CREADA) {
+            throw new RuntimeException("Solo se pueden actualizar ventas en estado CREADA");
+        }
+        
+        if (!venta.getNumeroComprobante().equals(dto.numeroComprobante()) && 
+            ventaRepository.existsByNumeroComprobanteAndSucursalId(dto.numeroComprobante(), contexto.getSucursalLogueada().getId())) {
+            throw new RuntimeException("Ya existe otra venta con este comprobante");
+        }
+
+        // Opcional: Lógica para manejar el cambio de Mesa
+        Mesa mesaAntigua = venta.getMesa();
+
+        revertirStock(venta);
+
+        mapToEntity(venta, dto);
+
+        // Si la mesa cambió, libera la antigua y ocupa la nueva
+        if (mesaAntigua != null && (venta.getMesa() == null || !mesaAntigua.getId().equals(venta.getMesa().getId()))) {
+            mesaAntigua.setLibre(true);
+            if (venta.getMesa() != null) {
+                venta.getMesa().setLibre(false);
+            }
+        }
+
+        gestionarDetalles(venta, dto.detalles());
+
+        Venta actualizada = ventaRepository.save(venta);
+        return mapToResponse(actualizada);
     }
 
     @Override
     public void eliminar(Long id) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'eliminar'");
+        Venta venta = ventaRepository.findByIdAndSucursalId(id, contexto.getSucursalLogueada().getId())
+                .orElseThrow(() -> new RuntimeException("Venta no encontrada"));
+
+        revertirStock(venta);
+
+        if (venta.getMesa() != null) {
+            venta.getMesa().setLibre(true);
+        }
+
+        ventaRepository.delete(venta);
+    }
+
+    @Override
+    public void cobrar(Long id) {
+        Venta venta = ventaRepository.findByIdAndSucursalId(id, contexto.getSucursalLogueada().getId())
+                .orElseThrow(() -> new RuntimeException("Venta no encontrada"));
+
+        if (venta.getEstado() == EstadoVenta.CANCELADA) {
+            throw new RuntimeException("No se puede cobrar una venta que está cancelada");
+        }
+
+        venta.setEstado(EstadoVenta.COBRADA);
+        
+        if (venta.getMesa() != null) {
+            venta.getMesa().setLibre(true);
+        }
+
+        ventaRepository.save(venta);
+    }
+
+    @Override
+    public void cancelar(Long id) {
+        Venta venta = ventaRepository.findByIdAndSucursalId(id, contexto.getSucursalLogueada().getId())
+                .orElseThrow(() -> new RuntimeException("Venta no encontrada"));
+
+        if (venta.getEstado() == EstadoVenta.CANCELADA) {
+            return;
+        }
+
+        revertirStock(venta);
+
+        if (venta.getMesa() != null) {
+            venta.getMesa().setLibre(true);
+        }
+
+        venta.setEstado(EstadoVenta.CANCELADA);
+        ventaRepository.save(venta);
     }
 
     private void gestionarDetalles(Venta venta, List<DetVentaRequestDTO> detallesDTO) {
@@ -100,18 +186,9 @@ public class VentaServiceImpl implements VentaService {
             return;
         }
 
-        // 1. Obtener IDs de Productos y Presentaciones
-        List<Long> productoIds = detallesDTO.stream()
-                .map(DetVentaRequestDTO::idProducto)
-                .toList();
+        List<Long> productoIds = almacenQuery.extraerIdsProductos(detallesDTO);
+        List<Long> presentacionIds = almacenQuery.extraerIdsPresentaciones(detallesDTO);
 
-        List<Long> presentacionIds = detallesDTO.stream()
-                .map(DetVentaRequestDTO::idPresentacion)
-                .filter(id -> id != null)
-                .distinct() // Evitar duplicados
-                .toList();
-
-        // 2. Buscar en Base de Datos
         Long empresaId = contexto.getEmpresaLogueada().getId();
         Map<Long, Producto> mapaProductos = almacenQuery.obtenerProductosEnMapa(productoIds, empresaId);
         Map<Long, PresentacionProducto> mapaPresentaciones = almacenQuery.obtenerPresentacionesEnMapa(presentacionIds, empresaId);
@@ -121,36 +198,38 @@ public class VentaServiceImpl implements VentaService {
         for (DetVentaRequestDTO itemDto : detallesDTO) {
             Producto producto = mapaProductos.get(itemDto.idProducto());
 
-            if (producto == null) {
-                throw new RuntimeException("Producto ID " + itemDto.idProducto() + " no encontrado");
-            }
-            
-            if (itemDto.cantidad() <= 0) {
-                throw new RuntimeException("La cantidad debe ser mayor a 0");
-            }
+            if (producto == null) throw new RuntimeException("Producto ID " + itemDto.idProducto() + " no encontrado");
+            if (itemDto.cantidad() <= 0) throw new RuntimeException("La cantidad debe ser mayor a 0");
 
             DetalleVenta detalle = new DetalleVenta();
             detalle.setVenta(venta);
             detalle.setProducto(producto);
             detalle.setCantidad(itemDto.cantidad());
-            detalle.setPrecioUnitario(itemDto.precioUnitario());
 
+            // Variables por defecto (si se vende por unidad base)
+            int factorConversion = 1;
+            double precioCobrar = producto.getPrecioUnitarioVenta();
+
+            // Si hay presentación, actualizamos el factor y el precio
             if (itemDto.idPresentacion() != null) {
                 PresentacionProducto presentacion = mapaPresentaciones.get(itemDto.idPresentacion());
-
-                if (presentacion == null) {
-                    throw new RuntimeException("La presentación solicitada no existe o no pertenece a su empresa");
-                }
-
+                if (presentacion == null) throw new RuntimeException("La presentación no existe");
                 if (!presentacion.getProducto().getId().equals(producto.getId())) {
-                    throw new RuntimeException("La presentación '" + presentacion.getNombre() + 
-                        "' no corresponde al producto '" + producto.getNombre() + "'");
+                    throw new RuntimeException("La presentación no corresponde al producto");
                 }
-
+                
                 detalle.setPresentacion(presentacion);
+                factorConversion = presentacion.getFactor();
+                precioCobrar = presentacion.getPrecioVenta();
             }
 
-            double subtotal = itemDto.cantidad() * itemDto.precioUnitario();
+            // Afectamos el stock multiplicando por el factor (ej: 2 cajas * 12 = 24 unidades a restar)
+            int cantidadRealAfectar = itemDto.cantidad() * factorConversion;
+            almacenQuery.afectarStock(producto.getId(), contexto.getSucursalLogueada().getId(), -cantidadRealAfectar);
+
+            // Calculamos subtotales y seteamos valores
+            detalle.setPrecioUnitario(precioCobrar);
+            double subtotal = itemDto.cantidad() * precioCobrar;
             detalle.setSubtotal(subtotal);
 
             venta.getDetalles().add(detalle);
@@ -190,13 +269,24 @@ public class VentaServiceImpl implements VentaService {
                 d.getId(),
                 d.getProducto().getId(),
                 d.getProducto().getNombre(),
-                d.getPresentacion().getId(),
-                d.getPresentacion().getNombre(),
+                d.getPresentacion() != null ? d.getPresentacion().getId() : null,
+                d.getPresentacion() != null ? d.getPresentacion().getNombre() : null,
                 d.getCantidad(),
                 d.getPrecioUnitario(),
                 d.getSubtotal()
             ))
             .toList();
+    }
+
+    private void revertirStock(Venta venta) {
+        if (venta.getDetalles() == null || venta.getDetalles().isEmpty()) return;
+
+        for (DetalleVenta detalle : venta.getDetalles()) {
+            int factor = detalle.getPresentacion() != null ? detalle.getPresentacion().getFactor() : 1;
+            int cantidadDevolver = detalle.getCantidad() * factor;
+            
+            almacenQuery.afectarStock(detalle.getProducto().getId(), contexto.getSucursalLogueada().getId(), cantidadDevolver);
+        }
     }
 
 }
