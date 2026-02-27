@@ -8,5 +8,6 @@ public record ProductoRequestDTO(
     Double precioUnitarioVenta,
     String unidadBase,
     Long idCategoria,
+    Integer stock,
     List<RecetaItemRequestDTO> receta
 ) {}

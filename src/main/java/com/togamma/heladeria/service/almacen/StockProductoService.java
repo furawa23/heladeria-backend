@@ -12,4 +12,5 @@ public interface StockProductoService {
     Page<StockProdResponseDTO> listarPorProducto(Long idProducto, Pageable pageable);
     StockProdResponseDTO obtenerPorProductoYSucursal(Long idProducto);
     StockProdResponseDTO obtenerPorId(Long id);
+    void inicializarStock(Long idProducto, Long idSucursal);
 }

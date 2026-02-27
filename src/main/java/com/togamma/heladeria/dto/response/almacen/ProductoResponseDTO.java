@@ -10,6 +10,7 @@ public record ProductoResponseDTO (
     Boolean seVende,
     Double precioUnitarioVenta,
     String unidadBase,
+    Integer stock,
     String categoria,
     List<RecetaItemResponseDTO> receta
 ) {}

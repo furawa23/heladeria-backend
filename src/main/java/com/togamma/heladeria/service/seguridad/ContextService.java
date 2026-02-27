@@ -8,12 +8,10 @@ import com.togamma.heladeria.model.seguridad.Sucursal;
 import com.togamma.heladeria.model.seguridad.Usuario;
 import com.togamma.heladeria.repository.seguridad.UsuarioRepository;
 
-import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
-@Transactional(readOnly = true)
 public class ContextService {
 
     private final UsuarioRepository usuarioRepository;
@@ -48,6 +46,14 @@ public class ContextService {
         }
 
         return sucursalActual;
+    }
+
+    public Sucursal getSucursalLogueadaOrNull() {
+        try {
+            return getSucursalLogueada();
+        } catch (RuntimeException e) {
+            return null;
+        }
     }
 
 }

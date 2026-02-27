@@ -30,6 +30,21 @@ public class StockProductoServiceImpl implements StockProductoService {
     private final ContextService contexto;
 
     @Override
+    public void inicializarStock(Long idProducto, Long idSucursal) {
+        Producto producto = productoRepository.findById(idProducto)
+                .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
+        Sucursal sucursal = sucursalRepository.findById(idSucursal)
+                .orElseThrow(() -> new RuntimeException("Sucursal no encontrada"));
+    
+        StockProducto stock = new StockProducto();
+        stock.setProducto(producto);
+        stock.setSucursal(sucursal);
+        stock.setCantidad(0);
+        
+        stockRepository.save(stock);
+    }
+
+    @Override
     public StockProdResponseDTO registrarIngreso(StockProdRequestDTO dto) {
         // 1. Validar que la Sucursal exista y pertenezca a la Empresa logueada
         Sucursal sucursal = sucursalRepository.findById(dto.idSucursal())
@@ -55,7 +70,7 @@ public class StockProductoServiceImpl implements StockProductoService {
         }
 
         // 5. Validar cantidad a ingresar
-        if (dto.cantidad() <= 0) {
+        if (dto.cantidad() < 0) {
             throw new RuntimeException("La cantidad a ingresar debe ser mayor a 0");
         }
 
@@ -108,10 +123,26 @@ public class StockProductoServiceImpl implements StockProductoService {
     @Transactional(readOnly = true)
     public StockProdResponseDTO obtenerPorProductoYSucursal(Long idProducto) {
 
-        return stockRepository.findByProductoIdAndSucursalId(idProducto, contexto.getSucursalLogueada().getId())
+        Long idSucursal = contexto.getSucursalLogueada().getId();
+
+        return stockRepository.findByProductoIdAndSucursalId(idProducto, idSucursal)
                 .map(this::mapToResponse)
                 .orElseGet(() -> {
-                    throw new RuntimeException("No existe registro de stock para este producto en la sucursal indicada");
+                    // Si no hay registro físico, armamos una respuesta con stock 0
+                    // Buscamos los nombres para que la vista (frontend) no reciba datos nulos
+                    Producto p = productoRepository.findById(idProducto)
+                            .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
+                    Sucursal s = sucursalRepository.findById(idSucursal)
+                            .orElseThrow(() -> new RuntimeException("Sucursal no encontrada"));
+
+                    return new StockProdResponseDTO(
+                            null, // id nulo porque aún no existe en BD
+                            null, // fecha nula
+                            p.getNombre(),
+                            p.getUnidadBase(),
+                            s.getNombre(),
+                            0 // ESTA ES LA MAGIA: Devolvemos 0
+                    );
                 });
     }
 

@@ -1,5 +1,6 @@
 package com.togamma.heladeria.repository.seguridad;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.domain.Page;
@@ -18,6 +19,8 @@ public interface SucursalRepository extends EmpresaScopedRepository<Sucursal> {
     @Override
     @EntityGraph(attributePaths = {"empresa"})
     Page<Sucursal> findByEmpresaId(Long idEmpresa, Pageable pageable);
+
+    List<Sucursal> findByEmpresaId(Long id);
 
     @Override
     @EntityGraph(attributePaths = {"empresa"})

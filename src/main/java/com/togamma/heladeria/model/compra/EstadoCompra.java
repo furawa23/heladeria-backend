@@ -1,7 +1,7 @@
 package com.togamma.heladeria.model.compra;
 
 public enum EstadoCompra {
-    CREADA,
+    REGISTRADO,
     CONFIRMADA,
     CANCELADA
 }

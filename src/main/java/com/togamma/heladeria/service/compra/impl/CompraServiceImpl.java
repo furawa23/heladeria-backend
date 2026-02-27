@@ -76,8 +76,8 @@ public class CompraServiceImpl implements CompraService {
         Compra compra = compraRepository.findByIdAndSucursalId(id, contexto.getSucursalLogueada().getId())
                 .orElseThrow(() -> new RuntimeException("Compra no encontrada"));
     
-        if (compra.getEstado() != EstadoCompra.CREADA) {
-            throw new RuntimeException("Solo se pueden actualizar compras en estado CREADA");
+        if (compra.getEstado() != EstadoCompra.REGISTRADO) {
+            throw new RuntimeException("Solo se pueden actualizar compras en estado REGISTRADO");
         }
 
         if (!compra.getNumeroComprobante().equals(dto.numeroComprobante()) && 
@@ -193,7 +193,7 @@ public class CompraServiceImpl implements CompraService {
     private void mapToEntity(Compra compra, CompraRequestDTO dto) {
         compra.setDescripcion(dto.descripcion());
         compra.setNumeroComprobante(dto.numeroComprobante());
-        compra.setEstado(EstadoCompra.CREADA);
+        compra.setEstado(EstadoCompra.REGISTRADO);
 
         if (dto.idProveedor() != null) {
             Proveedor proveedor = proveedorRepository.findByIdAndEmpresaId(dto.idProveedor(), contexto.getEmpresaLogueada().getId())

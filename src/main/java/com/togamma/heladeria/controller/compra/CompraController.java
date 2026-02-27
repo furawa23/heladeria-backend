@@ -41,13 +41,13 @@ public class CompraController {
         return ResponseEntity.ok(response);
     }
 
-    @PutMapping("/{id}/cancelar")
+    @PatchMapping("/{id}/cancelar")
     public ResponseEntity<Void> cancelar(@PathVariable Long id) {
         compraService.cancelar(id);
         return ResponseEntity.noContent().build();
     }
 
-    @PutMapping("/{id}/confirmar")
+    @PatchMapping("/{id}/confirmar")
     public ResponseEntity<Void> confirmar(@PathVariable Long id) {
         compraService.confirmar(id);
         return ResponseEntity.noContent().build();

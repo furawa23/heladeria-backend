@@ -12,14 +12,18 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.togamma.heladeria.dto.request.almacen.ProductoRequestDTO;
 import com.togamma.heladeria.dto.request.almacen.RecetaItemRequestDTO;
+import com.togamma.heladeria.dto.request.almacen.StockProdRequestDTO;
 import com.togamma.heladeria.dto.response.almacen.ProductoResponseDTO;
 import com.togamma.heladeria.dto.response.almacen.RecetaItemResponseDTO;
+import com.togamma.heladeria.dto.response.almacen.StockProdResponseDTO;
 import com.togamma.heladeria.model.almacen.CategoriaProducto;
 import com.togamma.heladeria.model.almacen.Producto;
 import com.togamma.heladeria.model.almacen.RecetaItem;
+import com.togamma.heladeria.model.seguridad.Sucursal;
 import com.togamma.heladeria.repository.almacen.CategoriaProductoRepository;
 import com.togamma.heladeria.repository.almacen.ProductoRepository;
 import com.togamma.heladeria.service.almacen.ProductoService;
+import com.togamma.heladeria.service.almacen.StockProductoService;
 import com.togamma.heladeria.service.seguridad.ContextService;
 
 import lombok.RequiredArgsConstructor;
@@ -32,12 +36,13 @@ public class ProductoServiceImpl implements ProductoService {
     private final ProductoRepository productoRepository;
     private final CategoriaProductoRepository categoriaRepository;
     private final ContextService contexto;
+    private final StockProductoService stockProductoService;
 
     @Override
     public ProductoResponseDTO crear(ProductoRequestDTO dto) {
 
         if (productoRepository.existsByNombreAndEmpresaId(dto.nombre(), contexto.getEmpresaLogueada().getId())) {
-            throw new RuntimeException("el producto ya existe");
+            throw new RuntimeException("El producto ya existe");
         }
 
         Producto producto = new Producto();
@@ -49,51 +54,83 @@ public class ProductoServiceImpl implements ProductoService {
         }
 
         Producto guardada = productoRepository.save(producto);
-        return mapToResponse(guardada);
+
+        // --- REGISTRO DE STOCK INICIAL CON VALIDACIÓN DE ROL ---
+        Integer stockInicial = 0;
+                
+        // Usamos el nuevo método seguro
+        Sucursal sucursal = contexto.getSucursalLogueadaOrNull();
+
+        if (sucursal != null) {
+            // ES EMPLEADO
+            Long idSucursal = sucursal.getId(); 
+            
+            if (dto.stock() != null && dto.stock() > 0) {
+                // Si viene con un stock inicial válido (> 0), hacemos el ingreso
+                StockProdRequestDTO stockDto = new StockProdRequestDTO(
+                    guardada.getId(), 
+                    idSucursal, 
+                    dto.stock()
+                );
+                
+                StockProdResponseDTO stockRes = stockProductoService.registrarIngreso(stockDto);
+                stockInicial = stockRes.cantidadActual();
+            } else {
+                // Si el stock es null o 0, creamos el registro base en 0
+                stockProductoService.inicializarStock(guardada.getId(), idSucursal);
+                stockInicial = 0;
+            }
+        } else {
+            // ES DUEÑO
+            // No hacemos registro de stock inicial directo a una sucursal,
+            // ya que el dueño creará el producto a nivel "Empresa".
+            stockInicial = 0;
+        }
+
+        return mapToResponse(guardada, stockInicial);
     }
 
     @Override
     @Transactional(readOnly = true)
     public Page<ProductoResponseDTO> listarTodas(Pageable page) {
         return productoRepository.findByEmpresaId(contexto.getEmpresaLogueada().getId(), page)
-                .map(this::mapToResponse);
+                .map(this::mapToResponseParaListados);
     }
-
 
     @Override
     @Transactional(readOnly = true)
     public Page<ProductoResponseDTO> listarSoloInsumos(Pageable pageable) {
         return productoRepository.findByEmpresaIdAndSeVendeFalse(contexto.getEmpresaLogueada().getId(), pageable)
-                .map(this::mapToResponse);
+                .map(this::mapToResponseParaListados);
     }
 
     @Override
     @Transactional(readOnly = true)
     public Page<ProductoResponseDTO> listarSoloVenta(Pageable pageable) {
         return productoRepository.findByEmpresaIdAndSeVendeTrue(contexto.getEmpresaLogueada().getId(), pageable)
-                .map(this::mapToResponse);
+                .map(this::mapToResponseParaListados);
     }
 
     @Override
     public Page<ProductoResponseDTO> listarPorCategoria(Long idCategoria, Pageable pageable) {
         return productoRepository.findByCategoriaIdAndEmpresaId(idCategoria, contexto.getEmpresaLogueada().getId(), pageable)
-                .map(this::mapToResponse);
+                .map(this::mapToResponseParaListados);
     }
 
     @Override
     @Transactional(readOnly = true)
     public ProductoResponseDTO obtenerPorId(Long id) {
         Producto producto = productoRepository.findByIdAndEmpresaId(id, contexto.getEmpresaLogueada().getId())
-                .orElseThrow(() -> new RuntimeException("Producto no encontrada"));
+                .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
 
-        return mapToResponse(producto);
+        return mapToResponseParaListados(producto);
     }
 
     @Override
     public ProductoResponseDTO actualizar(Long id, ProductoRequestDTO dto) {
     
         Producto producto = productoRepository.findByIdAndEmpresaId(id, contexto.getEmpresaLogueada().getId())
-                .orElseThrow(() -> new RuntimeException("Producto no encontrada"));
+                .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
 
         if (!producto.getNombre().equalsIgnoreCase(dto.nombre())) {
             if (productoRepository.existsByNombreAndEmpresaId(dto.nombre(), contexto.getEmpresaLogueada().getId())) {
@@ -110,14 +147,14 @@ public class ProductoServiceImpl implements ProductoService {
         }
     
         Producto actualizada = productoRepository.save(producto);
-        return mapToResponse(actualizada);
+        
+        return mapToResponseParaListados(actualizada);
     }
     
-
     @Override
     public void eliminar(Long id) {
         if (!productoRepository.existsByIdAndEmpresaId(id, contexto.getEmpresaLogueada().getId())) {
-            throw new RuntimeException("Producto no encontrada");
+            throw new RuntimeException("Producto no encontrado");
         }
         productoRepository.deleteById(id);
     }
@@ -129,20 +166,15 @@ public class ProductoServiceImpl implements ProductoService {
             producto.getReceta().clear();
         }
 
-        // 1. Extraer todos los IDs de los insumos solicitados
         List<Long> insumoIds = recetaDTO.stream()
                 .map(RecetaItemRequestDTO::insumoId)
                 .toList();
 
-        // 2. Buscar todos los insumos en UNA sola consulta a la BD
         List<Producto> insumosEncontrados = productoRepository.findByIdInAndEmpresaId(insumoIds, contexto.getEmpresaLogueada().getId());
 
-        // 3. Convertir a un Map para búsqueda rápida en memoria
-        // Map<ID, Producto>
         Map<Long, Producto> mapaInsumos = insumosEncontrados.stream()
                 .collect(Collectors.toMap(Producto::getId, p -> p));
 
-        // 4. Iterar y validar en memoria (sin ir a la BD)
         for (RecetaItemRequestDTO item : recetaDTO) {
             
             Producto insumo = mapaInsumos.get(item.insumoId());
@@ -160,7 +192,7 @@ public class ProductoServiceImpl implements ProductoService {
             }
 
             if (item.cantidadUsada() <= 0) {
-                throw new RuntimeException("la cantidad no puede ser menor a 0");
+                throw new RuntimeException("La cantidad no puede ser menor a 0");
             }
 
             RecetaItem recetaItem = new RecetaItem();
@@ -172,7 +204,7 @@ public class ProductoServiceImpl implements ProductoService {
         }
     }
     
-    private ProductoResponseDTO mapToResponse(Producto s) {
+    private ProductoResponseDTO mapToResponse(Producto s, Integer stock) {
         return new ProductoResponseDTO (
             s.getId(),
             s.getUpdatedAt(),
@@ -180,9 +212,24 @@ public class ProductoServiceImpl implements ProductoService {
             s.getSeVende(),
             s.getPrecioUnitarioVenta(),
             s.getUnidadBase(),
+            stock != null ? stock : 0, 
             s.getCategoria().getNombre(),
             mapItemsReceta(s.getReceta())
         );
+    }
+
+    private ProductoResponseDTO mapToResponseParaListados(Producto s) {
+        Integer stock = null;
+    
+        Sucursal sucursal = contexto.getSucursalLogueadaOrNull();
+        
+        if (sucursal != null) {
+            stock = stockProductoService
+                .obtenerPorProductoYSucursal(s.getId())
+                .cantidadActual();
+        }
+    
+        return mapToResponse(s, stock);
     }
 
     private List<RecetaItemResponseDTO> mapItemsReceta(List<RecetaItem> item) {
