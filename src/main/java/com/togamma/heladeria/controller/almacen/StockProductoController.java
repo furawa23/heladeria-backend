@@ -4,8 +4,9 @@ import com.togamma.heladeria.dto.request.almacen.StockProdRequestDTO;
 import com.togamma.heladeria.dto.response.almacen.StockProdResponseDTO;
 import com.togamma.heladeria.service.almacen.StockProductoService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
+
+import java.util.List;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -24,10 +25,8 @@ public class StockProductoController {
     }
 
     @GetMapping("/producto/{idProducto}")
-    public ResponseEntity<Page<StockProdResponseDTO>> listarPorProducto(
-            @PathVariable Long idProducto, 
-            Pageable pageable) {
-        Page<StockProdResponseDTO> response = stockProductoService.listarPorProducto(idProducto, pageable);
+    public ResponseEntity<List<StockProdResponseDTO>> listarPorProducto(@PathVariable Long idProducto) {
+        List<StockProdResponseDTO> response = stockProductoService.listarPorProducto(idProducto);
         return ResponseEntity.ok(response);
     }
 

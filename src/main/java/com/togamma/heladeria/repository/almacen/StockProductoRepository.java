@@ -1,9 +1,8 @@
 package com.togamma.heladeria.repository.almacen;
 
+import java.util.List;
 import java.util.Optional;
 
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 
@@ -16,5 +15,5 @@ public interface StockProductoRepository extends JpaRepository<StockProducto, Lo
     Boolean existsByProductoIdAndSucursalId(Long idProducto, Long idSucursal);
     Boolean existsByIdAndSucursalEmpresaId(Long id, Long idEmpresa);
     @EntityGraph(attributePaths = {"producto","sucursal"})
-    Page<StockProducto> findByProductoId(Long idProducto, Pageable pageable);
+    List<StockProducto> findByProductoId(Long idProducto);
 }

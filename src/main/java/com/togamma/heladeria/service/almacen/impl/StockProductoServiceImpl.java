@@ -1,7 +1,7 @@
 package com.togamma.heladeria.service.almacen.impl;
 
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
+import java.util.List;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -104,7 +104,7 @@ public class StockProductoServiceImpl implements StockProductoService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<StockProdResponseDTO> listarPorProducto(Long idProducto, Pageable pageable) {
+    public List<StockProdResponseDTO> listarPorProducto(Long idProducto) {
 
         boolean perteneceAEmpresa = productoRepository.existsByIdAndEmpresaId(
                 idProducto, 
@@ -115,8 +115,10 @@ public class StockProductoServiceImpl implements StockProductoService {
             throw new RuntimeException("Producto no encontrado o no autorizado"); 
         }
     
-        return stockRepository.findByProductoId(idProducto, pageable)
-                .map(this::mapToResponse);
+        return stockRepository.findByProductoId(idProducto)
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
     }
 
     @Override
