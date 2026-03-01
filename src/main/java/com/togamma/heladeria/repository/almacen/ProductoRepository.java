@@ -26,4 +26,5 @@ public interface ProductoRepository extends EmpresaScopedRepository<Producto> {
     @EntityGraph(attributePaths = {"categoria", "receta.insumo"})
     Optional<Producto> findByIdAndEmpresaId(Long id, Long idEmpresa);
     List<Producto> findByIdInAndEmpresaId(List<Long> idsInsumo, Long idEmpresa);
+    List<Producto> findByEmpresaIdAndSeVendeTrue(Long empresaId);
 }

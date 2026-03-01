@@ -1,5 +1,7 @@
 package com.togamma.heladeria.service.almacen;
 
+import java.util.List;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -14,5 +16,6 @@ public interface ProductoService {
     Page<ProductoResponseDTO> listarSoloVenta(Pageable pageable);
     ProductoResponseDTO obtenerPorId(Long id); 
     ProductoResponseDTO actualizar(Long id, ProductoRequestDTO dto);
+    List<ProductoResponseDTO> listarProductosDisponiblesParaVenta();
     void eliminar(Long id);
 }

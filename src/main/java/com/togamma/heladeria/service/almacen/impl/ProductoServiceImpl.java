@@ -150,6 +150,32 @@ public class ProductoServiceImpl implements ProductoService {
         
         return mapToResponseParaListados(actualizada);
     }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<ProductoResponseDTO> listarProductosDisponiblesParaVenta() {
+        Sucursal sucursal = contexto.getSucursalLogueadaOrNull();
+        if (sucursal == null) {
+            throw new RuntimeException("Debe estar logueado en una sucursal para consultar disponibilidad de venta");
+        }
+
+        // Obtenemos todos los productos marcados para venta de la empresa
+        List<Producto> productosVenta = productoRepository.findByEmpresaIdAndSeVendeTrue(contexto.getEmpresaLogueada().getId());
+
+        List<ProductoResponseDTO> disponibles = new ArrayList<>();
+
+        for (Producto p : productosVenta) {
+            int stockDisponible = calcularStockReal(p);
+
+            // Si se puede vender al menos 1 unidad, lo agregamos a la respuesta
+            if (stockDisponible > 0) {
+                // Usamos tu método existente mapToResponse, inyectando el stock calculado
+                disponibles.add(mapToResponse(p, stockDisponible));
+            }
+        }
+
+        return disponibles;
+    }
     
     @Override
     public void eliminar(Long id) {
@@ -157,6 +183,37 @@ public class ProductoServiceImpl implements ProductoService {
             throw new RuntimeException("Producto no encontrado");
         }
         productoRepository.deleteById(id);
+    }
+
+    private int calcularStockReal(Producto producto) {
+        if (producto.getReceta() == null || producto.getReceta().isEmpty()) {
+            // Producto directo sin receta: buscar su stock físico
+            StockProdResponseDTO stockPropio = stockProductoService.obtenerPorProductoYSucursal(producto.getId());
+            return stockPropio.cantidadActual() != null ? stockPropio.cantidadActual() : 0;
+        } else {
+            // Producto con receta: calcular el límite basado en los insumos
+            int maxUnidadesPosibles = Integer.MAX_VALUE;
+
+            for (RecetaItem item : producto.getReceta()) {
+                StockProdResponseDTO stockInsumo = stockProductoService.obtenerPorProductoYSucursal(item.getInsumo().getId());
+                int cantidadInsumoDisponible = stockInsumo.cantidadActual() != null ? stockInsumo.cantidadActual() : 0;
+
+                // Si no hay suficiente ni para una unidad, cortamos el cálculo
+                if (cantidadInsumoDisponible < item.getCantidadUsada()) {
+                    return 0;
+                }
+
+                // ¿Para cuántas unidades finales alcanza este insumo?
+                int unidadesConEsteInsumo = cantidadInsumoDisponible / item.getCantidadUsada();
+
+                // El "cuello de botella" define el stock máximo real
+                if (unidadesConEsteInsumo < maxUnidadesPosibles) {
+                    maxUnidadesPosibles = unidadesConEsteInsumo;
+                }
+            }
+
+            return maxUnidadesPosibles == Integer.MAX_VALUE ? 0 : maxUnidadesPosibles;
+        }
     }
 
     private void actualizarReceta(Producto producto, List<RecetaItemRequestDTO> recetaDTO) {
