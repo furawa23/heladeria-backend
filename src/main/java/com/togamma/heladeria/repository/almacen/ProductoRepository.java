@@ -12,19 +12,27 @@ import com.togamma.heladeria.repository.EmpresaScopedRepository;
 
 public interface ProductoRepository extends EmpresaScopedRepository<Producto> {
     
-    @EntityGraph(attributePaths = {"categoria"})
+    @EntityGraph(attributePaths = {"categoria", "receta.insumo"})
     Page<Producto> findByEmpresaIdAndSeVendeTrue(Long id, Pageable pageable);
-    @EntityGraph(attributePaths = {"categoria"})
+    
+    @EntityGraph(attributePaths = {"categoria", "receta.insumo"})
     Page<Producto> findByEmpresaIdAndSeVendeFalse(Long id, Pageable pageable);
+    
     Boolean existsByNombreAndEmpresaId(String nombre, Long id);
-    @EntityGraph(attributePaths = {"categoria"})
+    
+    @EntityGraph(attributePaths = {"categoria", "receta.insumo"})
     Page<Producto> findByCategoriaIdAndEmpresaId(Long idCategoria, Long idEmpresa, Pageable pageable);
+    
     @Override
-    @EntityGraph(attributePaths = {"categoria"})
+    @EntityGraph(attributePaths = {"categoria", "receta.insumo"})
     Page<Producto> findByEmpresaId(Long idEmpresa, Pageable pageable);
+    
     @Override
     @EntityGraph(attributePaths = {"categoria", "receta.insumo"})
     Optional<Producto> findByIdAndEmpresaId(Long id, Long idEmpresa);
+    
     List<Producto> findByIdInAndEmpresaId(List<Long> idsInsumo, Long idEmpresa);
+    
+    @EntityGraph(attributePaths = {"categoria", "receta.insumo"})
     List<Producto> findByEmpresaIdAndSeVendeTrue(Long empresaId);
 }
