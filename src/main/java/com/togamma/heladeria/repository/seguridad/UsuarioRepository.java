@@ -14,14 +14,20 @@ public interface UsuarioRepository extends SucursalScopedRepository<Usuario> {
     @Override
     @EntityGraph(attributePaths = {"sucursal", "empresa"})
     Page<Usuario> findAll(Pageable pageable);
+    
     @Override
     @EntityGraph(attributePaths = {"sucursal", "empresa"})
     Optional<Usuario> findById(Long id);
+    
     @Override
     @EntityGraph(attributePaths = {"sucursal", "empresa"})
     Page<Usuario> findBySucursalId(Long idSucursal, Pageable pageable);
+    
     @EntityGraph(attributePaths = {"sucursal", "empresa"})
     Optional<Usuario> findByUsername(String username);
+    
     @EntityGraph(attributePaths = {"sucursal", "empresa"})
     Page<Usuario> findBySucursalEmpresaId(Long idEmpresa, Pageable pageable);
+
+    Optional<Usuario> findBasicById(Long id);
 }

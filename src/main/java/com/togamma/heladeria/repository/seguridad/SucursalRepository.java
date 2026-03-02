@@ -20,9 +20,12 @@ public interface SucursalRepository extends EmpresaScopedRepository<Sucursal> {
     @EntityGraph(attributePaths = {"empresa"})
     Page<Sucursal> findByEmpresaId(Long idEmpresa, Pageable pageable);
 
+    @EntityGraph(attributePaths = {"empresa"})
     List<Sucursal> findByEmpresaId(Long id);
 
     @Override
     @EntityGraph(attributePaths = {"empresa"})
     Optional<Sucursal> findById(Long id);
+
+    Optional<Sucursal> findBasicById(Long id);
 }

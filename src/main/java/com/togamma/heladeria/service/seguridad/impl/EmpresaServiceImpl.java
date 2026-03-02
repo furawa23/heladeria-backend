@@ -81,7 +81,7 @@ public class EmpresaServiceImpl implements EmpresaService {
 
     @Override
     public void restaurar(Long id) {
-        Empresa empresa = empresaRepository.findById(id)
+        Empresa empresa = empresaRepository.findBasicById(id)
             .orElseThrow(() -> new RuntimeException("Empresa no encontrada"));
     
         empresa.setDeletedAt(null);
@@ -98,11 +98,11 @@ public class EmpresaServiceImpl implements EmpresaService {
             e.getRazonSocial(),
             e.getNombreDuenio(),
             e.getTelefono(),
-            mapSucursales(e.getSucursales())
+            mapSucursales(e.getSucursales(), e.getRazonSocial())
         );
     }
     
-    private List<SucursalResponseDTO> mapSucursales(List<Sucursal> sucursales) {
+    private List<SucursalResponseDTO> mapSucursales(List<Sucursal> sucursales, String razonSocialEmpresa) {
         if (sucursales == null) return List.of();
         return sucursales.stream()
             .map(s -> new SucursalResponseDTO(
@@ -112,7 +112,7 @@ public class EmpresaServiceImpl implements EmpresaService {
                 s.getDeletedAt(),
                 s.getNombre(),
                 s.getDireccion(),
-                s.getEmpresa().getRazonSocial()))
+                razonSocialEmpresa))
             .toList();
     }
 }

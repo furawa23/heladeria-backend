@@ -137,7 +137,7 @@ public class UsuarioServiceImpl implements UsuarioService {
 
     @Override
     public void restaurar(Long id) {
-        Usuario usuario = usuarioRepository.findById(id)
+        Usuario usuario = usuarioRepository.findBasicById(id)
             .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
     
         usuario.setDeletedAt(null);

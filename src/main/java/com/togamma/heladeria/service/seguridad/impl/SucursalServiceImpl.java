@@ -88,7 +88,7 @@ public class SucursalServiceImpl implements SucursalService {
 
     @Override
     public void restaurar(Long id) {
-        Sucursal sucursal = sucursalRepository.findById(id)
+        Sucursal sucursal = sucursalRepository.findBasicById(id)
             .orElseThrow(() -> new RuntimeException("Sucursal no encontrada"));
     
         sucursal.setDeletedAt(null);

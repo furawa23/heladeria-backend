@@ -17,4 +17,6 @@ public interface EmpresaRepository extends JpaRepository<Empresa, Long> {
     @Override
     @EntityGraph(attributePaths = {"sucursales"})
     Optional<Empresa> findById(Long id);
+
+    Optional<Empresa> findBasicById(Long id);
 }
