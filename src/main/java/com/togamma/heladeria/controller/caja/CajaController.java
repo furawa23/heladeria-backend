@@ -33,6 +33,12 @@ public class CajaController {
     @GetMapping("/abierta")
     public ResponseEntity<CajaResponseDTO> obtenerCajaAbierta() {
         CajaResponseDTO response = cajaService.obtenerCajaAbierta();
+        
+        if (response == null) {
+            // Si no hay caja, responde un 204 No Content (Una respuesta exitosa, pero sin cuerpo)
+            return ResponseEntity.noContent().build();
+        }
+        
         return ResponseEntity.ok(response);
     }
 

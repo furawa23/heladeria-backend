@@ -3,6 +3,7 @@ package com.togamma.heladeria.service.venta;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
+import com.togamma.heladeria.dto.request.venta.CobrarVentaRequestDTO;
 import com.togamma.heladeria.dto.request.venta.VentaRequestDTO;
 import com.togamma.heladeria.dto.response.venta.VentaResponseDTO;
 
@@ -14,5 +15,5 @@ public interface VentaService {
     VentaResponseDTO actualizar(Long id, VentaRequestDTO dto);
     void eliminar(Long id);
     void cancelar(Long id);
-    void cobrar(Long id);
+    VentaResponseDTO cobrar(Long id, CobrarVentaRequestDTO cobroDto);
 }

@@ -46,6 +46,7 @@ public class MovimientoCajaServiceImpl implements MovimientoCajaService {
         movimiento.setCaja(cajaActiva);
         movimiento.setTipo(dto.tipo());
         movimiento.setMonto(dto.monto());
+        movimiento.setMetodoPago(dto.metodoPago());
 
         // Enlazar referencias si existen
         if (dto.idVenta() != null) {
@@ -89,6 +90,7 @@ public class MovimientoCajaServiceImpl implements MovimientoCajaService {
             mov.getMonto(),
             idVenta,
             idCompra,
+            mov.getMetodoPago(),
             mov.getCreatedAt()
         );
     }

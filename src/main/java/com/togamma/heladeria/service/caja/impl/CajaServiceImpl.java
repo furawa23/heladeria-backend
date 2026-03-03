@@ -90,10 +90,12 @@ public class CajaServiceImpl implements CajaService {
     @Transactional(readOnly = true)
     public CajaResponseDTO obtenerCajaAbierta() {
         Long sucursalId = contexto.getSucursalLogueada().getId();
-        Caja caja = cajaRepository.findBySucursalIdAndEstado(sucursalId, EstadoCaja.ABIERTO)
-                .orElseThrow(() -> new RuntimeException("No hay ninguna caja abierta actualmente"));
         
-        return mapToResponse(caja);
+        // En lugar de lanzar una excepción (que genera el error 500), 
+        // mapeamos la respuesta o retornamos null.
+        return cajaRepository.findBySucursalIdAndEstado(sucursalId, EstadoCaja.ABIERTO)
+                .map(this::mapToResponse)
+                .orElse(null); 
     }
 
     @Override

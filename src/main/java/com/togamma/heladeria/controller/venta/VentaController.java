@@ -1,5 +1,6 @@
 package com.togamma.heladeria.controller.venta;
 
+import com.togamma.heladeria.dto.request.venta.CobrarVentaRequestDTO;
 import com.togamma.heladeria.dto.request.venta.VentaRequestDTO;
 import com.togamma.heladeria.dto.response.venta.VentaResponseDTO;
 import com.togamma.heladeria.service.venta.VentaService;
@@ -54,10 +55,10 @@ public class VentaController {
         return ResponseEntity.noContent().build();
     }
 
-    @PatchMapping("/{id}/cobrar")
-    public ResponseEntity<Void> cobrar(@PathVariable Long id) {
-        ventaService.cobrar(id);
-        return ResponseEntity.noContent().build();
+    @PutMapping("/{id}/cobrar")
+    public ResponseEntity<VentaResponseDTO> cobrar(@PathVariable Long id, @RequestBody CobrarVentaRequestDTO dto) {
+        VentaResponseDTO response = ventaService.cobrar(id, dto);
+        return ResponseEntity.ok(response);
     }
 
     @DeleteMapping("/{id}")
