@@ -17,6 +17,9 @@ public interface ProductoRepository extends EmpresaScopedRepository<Producto> {
     
     @EntityGraph(attributePaths = {"categoria", "receta.insumo"})
     Page<Producto> findByEmpresaIdAndSeVendeFalse(Long id, Pageable pageable);
+
+    @EntityGraph(attributePaths = {"categoria"})
+    Page<Producto> findByEmpresaIdAndRecetaIsEmpty(Long id, Pageable pageable);
     
     Boolean existsByNombreAndEmpresaId(String nombre, Long id);
     

@@ -44,6 +44,12 @@ public class ProductoController {
         return ResponseEntity.ok(response);
     }
 
+    @GetMapping("/sin-receta")
+    public ResponseEntity<Page<ProductoResponseDTO>> listarSinReceta(Pageable pageable) {
+        Page<ProductoResponseDTO> response = productoService.listarSinReceta(pageable);
+        return ResponseEntity.ok(response);
+    }
+
     @GetMapping("/disponible-venta")
     public ResponseEntity<List<ProductoResponseDTO>> listarDisponiblesParaVenta() {
         List<ProductoResponseDTO> response = productoService.listarProductosDisponiblesParaVenta();

@@ -58,6 +58,10 @@ public class StockProductoServiceImpl implements StockProductoService {
         Producto producto = productoRepository.findByIdAndEmpresaId(dto.idProducto(), contexto.getEmpresaLogueada().getId())
                 .orElseThrow(() -> new RuntimeException("Producto no encontrado o no autorizado"));
 
+        if (producto.getReceta() != null && !producto.getReceta().isEmpty()) {
+            throw new RuntimeException("No se puede registrar stock físico de un producto preparado al momento (con receta).");
+        }
+
         // 3. Buscar si ya existe el registro de stock
         StockProducto stock = stockRepository.findByProductoIdAndSucursalId(dto.idProducto(), dto.idSucursal())
                 .orElse(new StockProducto());
@@ -90,6 +94,10 @@ public class StockProductoServiceImpl implements StockProductoService {
         // Validar seguridad (Empresa)
         if (!stock.getSucursal().getEmpresa().getId().equals(contexto.getEmpresaLogueada().getId())) {
              throw new RuntimeException("No autorizado para modificar este stock");
+        }
+
+        if (stock.getProducto().getReceta() != null && !stock.getProducto().getReceta().isEmpty()) {
+            throw new RuntimeException("No se puede ajustar stock físico de un producto preparado al momento (con receta).");
         }
 
         if (nuevaCantidad < 0) {

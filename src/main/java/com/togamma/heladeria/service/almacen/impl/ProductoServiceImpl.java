@@ -49,42 +49,36 @@ public class ProductoServiceImpl implements ProductoService {
         mapToEntity(producto, dto);
         producto.setEmpresa(contexto.getEmpresaLogueada());        
 
-        if (Boolean.TRUE.equals(dto.seVende())) {
+        boolean tieneReceta = dto.receta() != null && !dto.receta().isEmpty();
+
+        if (tieneReceta) {
+            // Si tiene receta, bloqueamos que intenten enviarle stock inicial
+            if (dto.stock() != null && dto.stock() > 0) {
+                throw new RuntimeException("Un producto con receta no puede tener stock inicial físico.");
+            }
             actualizarReceta(producto, dto.receta());
         }
 
         Producto guardada = productoRepository.save(producto);
 
-        // --- REGISTRO DE STOCK INICIAL CON VALIDACIÓN DE ROL ---
+        // --- REGISTRO DE STOCK INICIAL (ROLES + RECETA) ---
         Integer stockInicial = 0;
-                
-        // Usamos el nuevo método seguro
         Sucursal sucursal = contexto.getSucursalLogueadaOrNull();
 
-        if (sucursal != null) {
-            // ES EMPLEADO
+        // Solo inicializamos/registramos stock físico si ES EMPLEADO y NO TIENE RECETA
+        if (sucursal != null && !tieneReceta) {
             Long idSucursal = sucursal.getId(); 
             
             if (dto.stock() != null && dto.stock() > 0) {
-                // Si viene con un stock inicial válido (> 0), hacemos el ingreso
                 StockProdRequestDTO stockDto = new StockProdRequestDTO(
-                    guardada.getId(), 
-                    idSucursal, 
-                    dto.stock()
+                    guardada.getId(), idSucursal, dto.stock()
                 );
-                
                 StockProdResponseDTO stockRes = stockProductoService.registrarIngreso(stockDto);
                 stockInicial = stockRes.cantidadActual();
             } else {
-                // Si el stock es null o 0, creamos el registro base en 0
                 stockProductoService.inicializarStock(guardada.getId(), idSucursal);
                 stockInicial = 0;
             }
-        } else {
-            // ES DUEÑO
-            // No hacemos registro de stock inicial directo a una sucursal,
-            // ya que el dueño creará el producto a nivel "Empresa".
-            stockInicial = 0;
         }
 
         return mapToResponse(guardada, stockInicial);
@@ -114,6 +108,13 @@ public class ProductoServiceImpl implements ProductoService {
     @Override
     public Page<ProductoResponseDTO> listarPorCategoria(Long idCategoria, Pageable pageable) {
         return productoRepository.findByCategoriaIdAndEmpresaId(idCategoria, contexto.getEmpresaLogueada().getId(), pageable)
+                .map(this::mapToResponseParaListados);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<ProductoResponseDTO> listarSinReceta(Pageable pageable) {
+        return productoRepository.findByEmpresaIdAndRecetaIsEmpty(contexto.getEmpresaLogueada().getId(), pageable)
                 .map(this::mapToResponseParaListados);
     }
 

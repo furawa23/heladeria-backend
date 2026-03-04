@@ -12,6 +12,7 @@ public interface ProductoService {
     ProductoResponseDTO crear(ProductoRequestDTO dto);
     Page<ProductoResponseDTO> listarTodas(Pageable pageable);
     Page<ProductoResponseDTO> listarPorCategoria(Long idCategoria, Pageable pageable);
+    Page<ProductoResponseDTO> listarSinReceta(Pageable pageable);
     Page<ProductoResponseDTO> listarSoloInsumos(Pageable pageable);
     Page<ProductoResponseDTO> listarSoloVenta(Pageable pageable);
     ProductoResponseDTO obtenerPorId(Long id); 
