@@ -20,6 +20,8 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import com.togamma.heladeria.model.seguridad.Rol;
+
 import java.util.Arrays;
 import java.util.List;
 
@@ -46,7 +48,7 @@ public class SecurityConfig {
                 // Rutas públicas (Login, Registro, etc.)
                 .requestMatchers("/api/auth/login", "/public/**").permitAll()
                 // Rutas solo para ADMIN (Ejemplo)
-                .requestMatchers("/api/usuarios/**").hasRole("SUPERADMIN")
+                .requestMatchers("/api/usuarios/superadmin").hasAnyRole(Rol.SUPERADMIN.toString(),Rol.DUENO.toString())
                 // Todo lo demás requiere estar logueado
                 .anyRequest().authenticated()
             )

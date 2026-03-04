@@ -12,8 +12,6 @@ import com.togamma.heladeria.model.caja.EstadoCaja;
 import com.togamma.heladeria.model.caja.MovimientoCaja;
 import com.togamma.heladeria.repository.caja.CajaRepository;
 import com.togamma.heladeria.repository.caja.MovimientoCajaRepository;
-import com.togamma.heladeria.repository.compra.CompraRepository;
-import com.togamma.heladeria.repository.venta.VentaRepository;
 import com.togamma.heladeria.service.caja.MovimientoCajaService;
 import com.togamma.heladeria.service.seguridad.ContextService;
 
@@ -26,8 +24,6 @@ public class MovimientoCajaServiceImpl implements MovimientoCajaService {
 
     private final MovimientoCajaRepository movimientoCajaRepository;
     private final CajaRepository cajaRepository;
-    private final VentaRepository ventaRepository;
-    private final CompraRepository compraRepository;
     private final ContextService contexto;
 
     @Override
@@ -47,21 +43,6 @@ public class MovimientoCajaServiceImpl implements MovimientoCajaService {
         movimiento.setTipo(dto.tipo());
         movimiento.setMonto(dto.monto());
         movimiento.setMetodoPago(dto.metodoPago());
-
-        // Enlazar referencias si existen
-        if (dto.idVenta() != null) {
-            movimiento.setReferenciaVenta(
-                ventaRepository.findByIdAndSucursalId(dto.idVenta(), sucursalId)
-                .orElseThrow(() -> new RuntimeException("Venta de referencia no encontrada"))
-            );
-        }
-
-        if (dto.idCompra() != null) {
-            movimiento.setReferenciaCompra(
-                compraRepository.findByIdAndSucursalId(dto.idCompra(), sucursalId)
-                .orElseThrow(() -> new RuntimeException("Compra de referencia no encontrada"))
-            );
-        }
 
         MovimientoCaja guardado = movimientoCajaRepository.save(movimiento);
         return mapToResponse(guardado);
