@@ -11,11 +11,13 @@ import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.OneToMany;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
-@Data
-@EqualsAndHashCode(callSuper = false)
+@Getter
+@Setter
+@NoArgsConstructor
 @Entity
 @SQLDelete(sql = "UPDATE empresa SET deleted_at = NOW() where id = ?")
 public class Empresa extends BaseEntity {

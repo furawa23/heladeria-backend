@@ -114,6 +114,13 @@ public class CompraServiceImpl implements CompraService {
             throw new RuntimeException("No se puede confirmar una compra cancelada");
         }
 
+        for (DetalleCompra detalle : compra.getDetalles()) {
+            int factor = detalle.getPresentacion() != null ? detalle.getPresentacion().getFactor() : 1;
+            int cantidadAfectar = detalle.getCantidad() * factor;
+
+            almacenQuery.afectarStock(detalle.getProducto().getId(), contexto.getSucursalLogueada().getId(), cantidadAfectar);
+        }
+
         compra.setEstado(EstadoCompra.CONFIRMADA);
         compraRepository.save(compra);
     }
@@ -163,22 +170,15 @@ public class CompraServiceImpl implements CompraService {
             detalle.setCantidad(itemDto.cantidad());
             detalle.setPrecioUnitarioCompra(itemDto.precioUnitario());
 
-            int factorConversion = 1;
-
             if (itemDto.idPresentacion() != null) {
                 PresentacionProducto presentacion = mapaPresentaciones.get(itemDto.idPresentacion());
                 if (presentacion == null) throw new RuntimeException("La presentación no existe");
                 if (!presentacion.getProducto().getId().equals(producto.getId())) {
                     throw new RuntimeException("La presentación no corresponde al producto");
                 }
-                
-                detalle.setPresentacion(presentacion);
-                factorConversion = presentacion.getFactor();
-            }
 
-            // Afectamos el stock sumando (ej: 5 cajas * 6 unidades = 30 unidades a sumar)
-            int cantidadRealAfectar = itemDto.cantidad() * factorConversion;
-            almacenQuery.afectarStock(producto.getId(), contexto.getSucursalLogueada().getId(), cantidadRealAfectar);
+                detalle.setPresentacion(presentacion);
+            }
 
             double subtotal = itemDto.cantidad() * itemDto.precioUnitario();
             detalle.setSubtotal(subtotal);

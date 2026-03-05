@@ -5,11 +5,13 @@ import org.hibernate.annotations.SQLDelete;
 import com.togamma.heladeria.model.BaseEntity;
 
 import jakarta.persistence.*;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
-@Data
-@EqualsAndHashCode(callSuper = false)
+@Getter
+@Setter
+@NoArgsConstructor
 @Entity
 @SQLDelete(sql = "UPDATE usuario SET deleted_at = NOW() where id = ?")
 public class Usuario extends BaseEntity {

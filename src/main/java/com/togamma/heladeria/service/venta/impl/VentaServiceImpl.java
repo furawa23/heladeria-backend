@@ -317,7 +317,16 @@ public class VentaServiceImpl implements VentaService {
             }
 
             int cantidadRealAfectar = itemDto.cantidad() * factorConversion;
-            almacenQuery.afectarStock(producto.getId(), contexto.getSucursalLogueada().getId(), -cantidadRealAfectar);
+            if (producto.getReceta() == null || producto.getReceta().isEmpty()) {
+                // Producto directo (sin receta): se descuenta su propio stock
+                almacenQuery.afectarStock(producto.getId(), contexto.getSucursalLogueada().getId(), -cantidadRealAfectar);
+            } else {
+                // Producto preparado (con receta): se descuenta el stock de cada insumo
+                for (com.togamma.heladeria.model.almacen.RecetaItem item : producto.getReceta()) {
+                    int cantidadInsumoADescontar = item.getCantidadUsada() * cantidadRealAfectar;
+                    almacenQuery.afectarStock(item.getInsumo().getId(), contexto.getSucursalLogueada().getId(), -cantidadInsumoADescontar);
+                }
+            }
 
             detalle.setPrecioUnitario(precioCobrar);
             double subtotal = itemDto.cantidad() * precioCobrar;
@@ -375,8 +384,18 @@ public class VentaServiceImpl implements VentaService {
         for (DetalleVenta detalle : venta.getDetalles()) {
             int factor = detalle.getPresentacion() != null ? detalle.getPresentacion().getFactor() : 1;
             int cantidadDevolver = detalle.getCantidad() * factor;
+            Producto producto = detalle.getProducto();
             
-            almacenQuery.afectarStock(detalle.getProducto().getId(), contexto.getSucursalLogueada().getId(), cantidadDevolver);
+            // --- NUEVA LÓGICA DE REVERSIÓN DE STOCK ---
+            if (producto.getReceta() == null || producto.getReceta().isEmpty()) {
+                almacenQuery.afectarStock(producto.getId(), contexto.getSucursalLogueada().getId(), cantidadDevolver);
+            } else {
+                for (com.togamma.heladeria.model.almacen.RecetaItem item : producto.getReceta()) {
+                    int cantidadInsumoADevolver = item.getCantidadUsada() * cantidadDevolver;
+                    almacenQuery.afectarStock(item.getInsumo().getId(), contexto.getSucursalLogueada().getId(), cantidadInsumoADevolver);
+                }
+            }
+            // ------------------------------------------
         }
     }
 }
