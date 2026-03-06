@@ -60,7 +60,7 @@ public class CategoriaProductoServiceImpl implements CategoriaProductoService {
                 .orElseThrow(() -> new RuntimeException("Categoria de Producto no encontrada"));
 
         if (!categoria.getNombre().equalsIgnoreCase(dto.nombre())) {
-            if (categoriaRepository.existsByNombreAndEmpresaId(dto.nombre(), contexto.getEmpresaLogueada().getId())) {
+            if (categoriaRepository.existsByNombreAndEmpresaIdAndIdNot(dto.nombre(), contexto.getEmpresaLogueada().getId(), id)) {
                 throw new RuntimeException("Ya existe una categoría con ese nombre");
             }
         }

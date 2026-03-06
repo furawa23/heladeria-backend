@@ -1,11 +1,11 @@
-package com.togamma.heladeria.repository.almacen;
+package com.togamma.heladeria.repository.sabor;
 
-import com.togamma.heladeria.model.almacen.CategoriaProducto;
+import com.togamma.heladeria.model.sabores.Sabor;
 import com.togamma.heladeria.repository.EmpresaScopedRepository;
 
-public interface CategoriaProductoRepository extends EmpresaScopedRepository<CategoriaProducto> {
-    
+public interface SaborRepository extends EmpresaScopedRepository<Sabor> {
     Boolean existsByNombreAndEmpresaId(String nombre, Long id);
 
     Boolean existsByNombreAndEmpresaIdAndIdNot(String nombre, Long idEmpresa, Long id);
+
 }
