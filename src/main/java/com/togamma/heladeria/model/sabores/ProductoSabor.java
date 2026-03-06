@@ -23,7 +23,7 @@ import lombok.Setter;
 public class ProductoSabor extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "id_empresa")
+    @JoinColumn(name = "id_producto")
     private Producto producto;
 
     @ManyToOne(fetch = FetchType.LAZY)

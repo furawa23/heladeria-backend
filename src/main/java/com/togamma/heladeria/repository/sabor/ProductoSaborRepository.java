@@ -12,4 +12,8 @@ public interface ProductoSaborRepository  extends JpaRepository<ProductoSabor, L
 
     void deleteByProductoId(Long idProducto);
 
+    List<ProductoSabor> findBySaborId(Long idSabor);
+
+    void deleteBySaborId(Long idSabor);
+
 }

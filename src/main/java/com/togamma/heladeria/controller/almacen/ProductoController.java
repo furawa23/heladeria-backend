@@ -2,7 +2,10 @@ package com.togamma.heladeria.controller.almacen;
 
 import com.togamma.heladeria.dto.request.almacen.ProductoRequestDTO;
 import com.togamma.heladeria.dto.response.almacen.ProductoResponseDTO;
+import com.togamma.heladeria.dto.response.sabor.SaborResponseDTO;
 import com.togamma.heladeria.service.almacen.ProductoService;
+import com.togamma.heladeria.service.sabor.ProductoSaborService;
+
 import lombok.RequiredArgsConstructor;
 
 import java.util.List;
@@ -19,6 +22,7 @@ import org.springframework.web.bind.annotation.*;
 public class ProductoController {
 
     private final ProductoService productoService;
+    private final ProductoSaborService productoSaborService;
 
     @PostMapping
     public ResponseEntity<ProductoResponseDTO> crear(@RequestBody ProductoRequestDTO dto) {
@@ -78,5 +82,22 @@ public class ProductoController {
     public ResponseEntity<Void> eliminar(@PathVariable Long id) {
         productoService.eliminar(id);
         return ResponseEntity.noContent().build();
+    }
+
+    //----------- sabores -----------
+
+    @GetMapping("/{idProducto}/sabores")
+    public ResponseEntity<List<SaborResponseDTO>> obtenerSaboresPermitidos(@PathVariable Long idProducto) {
+        List<SaborResponseDTO> sabores = productoSaborService.obtenerSaboresPermitidosParaProducto(idProducto);
+        return ResponseEntity.ok(sabores);
+    }
+
+    @PostMapping("/{idProducto}/sabores")
+    public ResponseEntity<Void> asignarSabores(
+            @PathVariable Long idProducto, 
+            @RequestBody List<Long> idsSabores) {
+            
+        productoSaborService.asignarSaboresAProducto(idProducto, idsSabores);
+        return ResponseEntity.ok().build();
     }
 }

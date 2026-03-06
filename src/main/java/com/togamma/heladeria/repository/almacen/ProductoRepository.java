@@ -38,4 +38,6 @@ public interface ProductoRepository extends EmpresaScopedRepository<Producto> {
     
     @EntityGraph(attributePaths = {"categoria", "receta.insumo"})
     List<Producto> findByEmpresaIdAndSeVendeTrue(Long empresaId);
+
+    boolean existsByNombreAndEmpresaIdAndIdNot(String nombre, Long idEmpresa, Long id);
 }

@@ -81,7 +81,7 @@ public class CompraServiceImpl implements CompraService {
         }
 
         if (!compra.getNumeroComprobante().equals(dto.numeroComprobante()) && 
-            compraRepository.existsByNumeroComprobanteAndSucursalId(dto.numeroComprobante(), contexto.getSucursalLogueada().getId())) {
+            compraRepository.existsByNumeroComprobanteAndSucursalIdAndIdNot(dto.numeroComprobante(), contexto.getSucursalLogueada().getId(), id)) {
             throw new RuntimeException("Ya existe otra compra con este comprobante");
         }
     

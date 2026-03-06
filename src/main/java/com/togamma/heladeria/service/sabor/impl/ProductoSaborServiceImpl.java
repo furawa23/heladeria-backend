@@ -55,4 +55,31 @@ public class ProductoSaborServiceImpl implements ProductoSaborService {
         }
     }
 
+    // 1. Para cargar el MultiSelect cuando le das a "Editar" Sabor
+    public List<Long> obtenerIdsProductosPorSabor(Long idSabor) {
+        List<ProductoSabor> relaciones = productoSaborRepository.findBySaborId(idSabor);
+        return relaciones.stream()
+                         .map(relacion -> relacion.getProducto().getId())
+                         .collect(Collectors.toList());
+    }
+
+    // 2. Para guardar cuando le das a "Guardar" en el modal de Sabores
+    @Transactional
+    public void asignarProductosASabor(Long idSabor, List<Long> idsProductos) {
+        Sabor sabor = saborRepository.findById(idSabor)
+            .orElseThrow(() -> new RuntimeException("Sabor no encontrado"));
+
+        productoSaborRepository.deleteBySaborId(idSabor);
+
+        for (Long idProducto : idsProductos) {
+            Producto producto = productoRepository.findById(idProducto)
+                .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
+                
+            ProductoSabor relacion = new ProductoSabor();
+            relacion.setProducto(producto);
+            relacion.setSabor(sabor);
+            productoSaborRepository.save(relacion);
+        }
+    }
+
 }

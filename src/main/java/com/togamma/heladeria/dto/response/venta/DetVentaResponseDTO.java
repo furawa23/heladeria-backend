@@ -1,5 +1,7 @@
 package com.togamma.heladeria.dto.response.venta;
 
+import java.util.List;
+
 public record DetVentaResponseDTO(
     Long id,
     Long idProducto,
@@ -8,6 +10,7 @@ public record DetVentaResponseDTO(
     String nombrePresentacion,
     Integer cantidad,
     Double precioUnitario,
-    Double subtotal
+    Double subtotal,
+    List<String> sabores
 ) {
 }

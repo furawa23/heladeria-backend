@@ -23,4 +23,6 @@ public interface PresentacionProductoRepository extends JpaRepository<Presentaci
     
     @EntityGraph(attributePaths = {"producto"})
     List<PresentacionProducto> findByIdInAndProductoEmpresaId(List<Long> ids, Long idEmpresa);
+
+    boolean existsByNombreAndProductoIdAndIdNot(String nombre, Long idProducto, Long id);
 }

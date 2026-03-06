@@ -91,7 +91,7 @@ public class PresentacionProductoServiceImpl implements PresentacionProductoServ
         }
     
         if (!presentacion.getNombre().equalsIgnoreCase(dto.nombre())) {
-            if(presentacionRepository.existsByNombreAndProductoId(dto.nombre(), dto.idProducto())) {
+            if(presentacionRepository.existsByNombreAndProductoIdAndIdNot(dto.nombre(), dto.idProducto(), id)) {
                 throw new RuntimeException("Ya existe otra presentación con este nombre para el producto");
             }
         }

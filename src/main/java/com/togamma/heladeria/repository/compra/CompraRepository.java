@@ -20,4 +20,6 @@ public interface CompraRepository extends SucursalScopedRepository<Compra> {
     @Override
     @EntityGraph(attributePaths = {"proveedor", "detalles.producto", "detalles.presentacion"})
     Page<Compra> findBySucursalId(Long idSucursal, Pageable pageable);
+
+    boolean existsByNumeroComprobanteAndSucursalIdAndIdNot(String numeroComprobante, Long idSucursal, Long id);
 }

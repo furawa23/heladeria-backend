@@ -20,12 +20,15 @@ import com.togamma.heladeria.model.almacen.PresentacionProducto;
 import com.togamma.heladeria.model.almacen.Producto;
 import com.togamma.heladeria.model.caja.EstadoCaja;
 import com.togamma.heladeria.model.caja.TipoMovimiento;
+import com.togamma.heladeria.model.sabores.Sabor;
 import com.togamma.heladeria.model.venta.DetalleVenta;
+import com.togamma.heladeria.model.venta.DetalleVentaSabor;
 import com.togamma.heladeria.model.venta.EstadoVenta;
 import com.togamma.heladeria.model.venta.Mesa;
 import com.togamma.heladeria.model.venta.PagoVenta;
 import com.togamma.heladeria.model.venta.Venta;
 import com.togamma.heladeria.repository.caja.CajaRepository;
+import com.togamma.heladeria.repository.sabor.SaborRepository;
 import com.togamma.heladeria.repository.venta.MesaRepository;
 import com.togamma.heladeria.repository.venta.VentaRepository;
 import com.togamma.heladeria.service.almacen.AlmacenQueryService;
@@ -44,6 +47,7 @@ public class VentaServiceImpl implements VentaService {
     private final MesaRepository mesaRepository;
     private final ContextService contexto;
     private final AlmacenQueryService almacenQuery;
+    private final SaborRepository saborRepository;
     
     // Nuevas dependencias inyectadas para la caja y movimientos
     private final CajaRepository cajaRepository;
@@ -269,75 +273,112 @@ public class VentaServiceImpl implements VentaService {
     }
 
     private void gestionarDetalles(Venta venta, List<DetVentaRequestDTO> detallesDTO) {
-        // ... (Tu lógica existente se mantiene intacta)
-        if (venta.getDetalles() == null) {
-            venta.setDetalles(new ArrayList<>());
-        } else {
-            venta.getDetalles().clear();
-        }
-
-        if (detallesDTO == null || detallesDTO.isEmpty()) {
-            venta.setTotal(0.0);
-            return;
-        }
-
-        List<Long> productoIds = almacenQuery.extraerIdsProductos(detallesDTO);
-        List<Long> presentacionIds = almacenQuery.extraerIdsPresentaciones(detallesDTO);
-
-        Long empresaId = contexto.getEmpresaLogueada().getId();
-        Map<Long, Producto> mapaProductos = almacenQuery.obtenerProductosEnMapa(productoIds, empresaId);
-        Map<Long, PresentacionProducto> mapaPresentaciones = almacenQuery.obtenerPresentacionesEnMapa(presentacionIds, empresaId);
-
-        double totalCalculado = 0.0;
-
-        for (DetVentaRequestDTO itemDto : detallesDTO) {
-            Producto producto = mapaProductos.get(itemDto.idProducto());
-
-            if (producto == null) throw new RuntimeException("Producto ID " + itemDto.idProducto() + " no encontrado");
-            if (itemDto.cantidad() <= 0) throw new RuntimeException("La cantidad debe ser mayor a 0");
-
-            DetalleVenta detalle = new DetalleVenta();
-            detalle.setVenta(venta);
-            detalle.setProducto(producto);
-            detalle.setCantidad(itemDto.cantidad());
-
-            int factorConversion = 1;
-            double precioCobrar = producto.getPrecioUnitarioVenta();
-
-            if (itemDto.idPresentacion() != null) {
-                PresentacionProducto presentacion = mapaPresentaciones.get(itemDto.idPresentacion());
-                if (presentacion == null) throw new RuntimeException("La presentación no existe");
-                if (!presentacion.getProducto().getId().equals(producto.getId())) {
-                    throw new RuntimeException("La presentación no corresponde al producto");
-                }
-                
-                detalle.setPresentacion(presentacion);
-                factorConversion = presentacion.getFactor();
-                precioCobrar = presentacion.getPrecioVenta();
-            }
-
-            int cantidadRealAfectar = itemDto.cantidad() * factorConversion;
-            if (producto.getReceta() == null || producto.getReceta().isEmpty()) {
-                // Producto directo (sin receta): se descuenta su propio stock
-                almacenQuery.afectarStock(producto.getId(), contexto.getSucursalLogueada().getId(), -cantidadRealAfectar);
-            } else {
-                // Producto preparado (con receta): se descuenta el stock de cada insumo
-                for (com.togamma.heladeria.model.almacen.RecetaItem item : producto.getReceta()) {
-                    int cantidadInsumoADescontar = item.getCantidadUsada() * cantidadRealAfectar;
-                    almacenQuery.afectarStock(item.getInsumo().getId(), contexto.getSucursalLogueada().getId(), -cantidadInsumoADescontar);
-                }
-            }
-
-            detalle.setPrecioUnitario(precioCobrar);
-            double subtotal = itemDto.cantidad() * precioCobrar;
-            detalle.setSubtotal(subtotal);
-
-            venta.getDetalles().add(detalle);
-            totalCalculado += subtotal;
-        }
-
-        venta.setTotal(totalCalculado);
+    if (venta.getDetalles() == null) {
+        venta.setDetalles(new ArrayList<>());
+    } else {
+        venta.getDetalles().clear();
     }
+
+    if (detallesDTO == null || detallesDTO.isEmpty()) {
+        venta.setTotal(0.0);
+        return;
+    }
+
+    List<Long> productoIds = almacenQuery.extraerIdsProductos(detallesDTO);
+    List<Long> presentacionIds = almacenQuery.extraerIdsPresentaciones(detallesDTO);
+    Long empresaId = contexto.getEmpresaLogueada().getId();
+    
+    Map<Long, Producto> mapaProductos = almacenQuery.obtenerProductosEnMapa(productoIds, empresaId);
+    Map<Long, PresentacionProducto> mapaPresentaciones = almacenQuery.obtenerPresentacionesEnMapa(presentacionIds, empresaId);
+
+    double totalCalculado = 0.0;
+
+    for (DetVentaRequestDTO itemDto : detallesDTO) {
+        Producto producto = mapaProductos.get(itemDto.idProducto());
+
+        if (producto == null) throw new RuntimeException("Producto ID " + itemDto.idProducto() + " no encontrado");
+        if (itemDto.cantidad() <= 0) throw new RuntimeException("La cantidad debe ser mayor a 0");
+
+        DetalleVenta detalle = new DetalleVenta();
+        detalle.setVenta(venta);
+        detalle.setProducto(producto);
+        detalle.setCantidad(itemDto.cantidad());
+
+        int factorConversion = 1;
+        double precioCobrar = producto.getPrecioUnitarioVenta();
+
+        if (itemDto.idPresentacion() != null) {
+            PresentacionProducto presentacion = mapaPresentaciones.get(itemDto.idPresentacion());
+            if (presentacion == null) throw new RuntimeException("La presentación no existe");
+            if (!presentacion.getProducto().getId().equals(producto.getId())) {
+                throw new RuntimeException("La presentación no corresponde al producto");
+            }
+            
+            detalle.setPresentacion(presentacion);
+            factorConversion = presentacion.getFactor();
+            precioCobrar = presentacion.getPrecioVenta();
+        }
+
+        // --- LÓGICA DE STOCK DEL PRODUCTO/RECETA PRINCIPAL ---
+        int cantidadRealAfectar = itemDto.cantidad() * factorConversion;
+        if (producto.getReceta() == null || producto.getReceta().isEmpty()) {
+            almacenQuery.afectarStock(producto.getId(), contexto.getSucursalLogueada().getId(), -cantidadRealAfectar);
+        } else {
+            for (com.togamma.heladeria.model.almacen.RecetaItem item : producto.getReceta()) {
+                int cantidadInsumoADescontar = item.getCantidadUsada() * cantidadRealAfectar;
+                almacenQuery.afectarStock(item.getInsumo().getId(), contexto.getSucursalLogueada().getId(), -cantidadInsumoADescontar);
+            }
+        }
+
+        // ==========================================
+        // NUEVA LÓGICA: PROCESAR SABORES
+        // ==========================================
+        double recargoPorSabores = 0.0;
+        List<DetalleVentaSabor> listaSabores = new ArrayList<>();
+
+        if (itemDto.idsSabores() != null && !itemDto.idsSabores().isEmpty()) {
+            
+            // Opcional: Validar cantidad máxima de sabores permitidos por este producto
+            // if (itemDto.idsSabores().size() > producto.getMaxSabores()) {
+            //     throw new RuntimeException("Excede el límite de sabores permitidos.");
+            // }
+
+            for (Long idSabor : itemDto.idsSabores()) {
+                // Buscamos el sabor verificando que pertenezca a la empresa actual (Multi-tenancy)
+                Sabor sabor = saborRepository.findByIdAndEmpresaId(idSabor, empresaId)
+                    .orElseThrow(() -> new RuntimeException("Sabor con ID " + idSabor + " no encontrado"));
+
+                DetalleVentaSabor detSabor = new DetalleVentaSabor();
+                detSabor.setDetalle(detalle); // Relación bidireccional
+                detSabor.setSabor(sabor);
+                // ¡CRÍTICO! Congelamos el precio del sabor en este instante
+                detSabor.setPrecioAdicionalAplicado(sabor.getPrecioAdicional()); 
+
+                listaSabores.add(detSabor);
+                recargoPorSabores += sabor.getPrecioAdicional();
+            }
+        }
+        
+        // Asignamos la lista de sabores al detalle para que Hibernate la guarde en cascada
+        detalle.setSabores(listaSabores); 
+
+        // ==========================================
+        // CÁLCULO DE TOTALES (Precio Base + Sabores)
+        // ==========================================
+        
+        // Al precio unitario le sumamos lo que cuesten los sabores extra
+        double precioUnitarioFinal = precioCobrar + recargoPorSabores;
+        detalle.setPrecioUnitario(precioUnitarioFinal);
+        
+        double subtotal = itemDto.cantidad() * precioUnitarioFinal;
+        detalle.setSubtotal(subtotal);
+
+        venta.getDetalles().add(detalle);
+        totalCalculado += subtotal;
+    }
+
+    venta.setTotal(totalCalculado);
+}
 
     private void mapToEntity(Venta venta, VentaRequestDTO dto) {
         venta.setNumeroComprobante(dto.numeroComprobante());
@@ -373,7 +414,8 @@ public class VentaServiceImpl implements VentaService {
                 d.getPresentacion() != null ? d.getPresentacion().getNombre() : null,
                 d.getCantidad(),
                 d.getPrecioUnitario(),
-                d.getSubtotal()
+                d.getSubtotal(),
+                d.getSabores().stream().map(ds -> ds.getSabor().getNombre()).toList()
             ))
             .toList();
     }
