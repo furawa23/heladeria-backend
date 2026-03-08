@@ -27,12 +27,36 @@ El backend está diseñado de forma modular para cubrir todas las áreas de una 
 ## Arquitectura de Paquetes
 
 ```text
-src/main/java/com/tuusuario/heladeria/
-├── controllers/          # Endpoints REST (Exposición de la API)
-├── services/             # Interfaces de lógica de negocio
-├── servicesImpl/         # Implementaciones de servicios
-├── repositories/         # Interfaces de acceso a datos (JPA)
-├── entities/             # Modelos de base de datos (JPA Entities)
+src/main/java/com/togamma/heladeria/
+├── config/              # Spring security, JWT y CORS 
+├── controller/          # Endpoints REST (Exposición de la API)
+   ├── almacen/
+   ├── caja/
+   ├── compra/
+   ├── sabor/
+   ├── seguridad/
+   └── venta/
+├── service/             # Interfaces de lógica de negocio e Implementaciones de servicios
+   ├── almacen/
+   ├── caja/
+   ├── compra/
+   ├── sabor/
+   ├── seguridad/
+   └── venta/
+├── repository/         # Interfaces de acceso a datos (JPA)
+   ├── almacen/
+   ├── caja/
+   ├── compra/
+   ├── sabor/
+   ├── seguridad/
+   └── venta/
+├── model/             # Modelos de base de datos (JPA Entities)
+   ├── almacen/
+   ├── caja/
+   ├── compra/
+   ├── sabor/
+   ├── seguridad/
+   └── venta/
 └── dto/                  # Objetos de transferencia de datos
     ├── request/          # Payloads de entrada
     └── response/         # Estructuras de salida personalizadas
