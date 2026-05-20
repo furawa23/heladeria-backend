@@ -1,15 +1,15 @@
 # 1. Bloqueo Global de código fuente
 # Esto ignora todos los archivos .java en cualquier profundidad
-**/*.java
+#**/*.java
 
 # 2. PERMITIR CONTROLLERS (Incluyendo subcarpetas)
 # El asterisco doble (**) permite entrar en almacen, caja, compra, etc.
-!src/main/java/com/togamma/heladeria/controller/**/*.java
+#!src/main/java/com/togamma/heladeria/controller/**/*.java
 
 # 3. MOSTRAR ESTRUCTURA DE PAQUETES (Vacíos)
 # Esto permite que aparezcan las carpetas dto, model, service, etc. en GitHub
 # pero sin mostrar su contenido .java protegido.
-!**/src/main/java/**/
+#!**/src/main/java/**/
 
 # 4. EXCEPCIONES DE ARCHIVOS BASE
 !README.md
@@ -19,7 +19,7 @@
 
 # 5. SEGURIDAD: Ignorar configuración con credenciales
 # Es vital para que no vean tus claves de base de datos
-src/main/resources/application.properties
+#src/main/resources/application.properties
 src/main/resources/application.yml
 
 # 6. BASURA DE COMPILACIÓN Y IDE
