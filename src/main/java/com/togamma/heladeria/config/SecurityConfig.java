@@ -5,6 +5,7 @@ import java.util.List;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -17,6 +18,7 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
@@ -34,13 +36,17 @@ public class SecurityConfig {
     private final UserDetailsService userDetailsService;
     private final JwtAuthenticationFilter jwtAuthFilter;
     private final OAuth2SuccessHandler oAuth2SuccessHandler;
-    private final HttpCookieOAuth2AuthorizationRequestRepository cookieRepo; // ← NUEVO
+    private final HttpCookieOAuth2AuthorizationRequestRepository cookieRepo;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .csrf(AbstractHttpConfigurer::disable)
+            // ---> SOLUCIÓN AL 302: Forzar error 401 en lugar de redirigir <---
+            .exceptionHandling(customizer -> customizer
+                .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED))
+            )
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/auth/login", "/public/**", "/login/oauth2/**", "/oauth2/**").permitAll()
                 .requestMatchers("/api/usuarios/superadmin").hasAnyRole(Rol.SUPERADMIN.toString(), Rol.DUENO.toString())
@@ -52,9 +58,13 @@ public class SecurityConfig {
             .authenticationProvider(authenticationProvider())
             .oauth2Login(oauth2 -> oauth2
                 .authorizationEndpoint(a -> a
-                    .authorizationRequestRepository(cookieRepo) // ← NUEVO: guarda el "state" en cookie, no en sesión
+                    .authorizationRequestRepository(cookieRepo)
                 )
                 .successHandler(oAuth2SuccessHandler)
+                // Opcional: Para capturar errores del login con Google si ocurren
+                .failureHandler((request, response, exception) -> {
+                    response.sendRedirect("https://heladeria.togamma.lat/auth/login?error=oauth2_failed");
+                })
             )
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
