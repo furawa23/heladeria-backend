@@ -4,7 +4,7 @@ import com.togamma.heladeria.dto.request.seguridad.LoginRequestDTO;
 import com.togamma.heladeria.dto.response.seguridad.AuthResponseDTO;
 import com.togamma.heladeria.dto.response.seguridad.UsuarioResponseDTO;
 import com.togamma.heladeria.model.seguridad.Usuario;
-import com.togamma.heladeria.repository.seguridad.UsuarioRepository;
+import com.togamma.heladeria.service.seguridad.ContextService;
 import com.togamma.heladeria.service.seguridad.impl.AuthService;
 
 import lombok.RequiredArgsConstructor;
@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.*;
 public class AuthController {
 
     private final AuthService authService;
-    private final UsuarioRepository usuarioRepository; 
+    private final ContextService contexto; 
 
     @PostMapping("/login")
     public ResponseEntity<AuthResponseDTO> login(@RequestBody LoginRequestDTO request) {
@@ -28,12 +28,8 @@ public class AuthController {
 
     @GetMapping("/me")
     public ResponseEntity<UsuarioResponseDTO> obtenerUsuarioActual(Authentication authentication) {
-        // 1. Obtenemos el username del token
-        String username = authentication.getName();
 
-        // 2. Buscamos al usuario en la BD
-        Usuario usuario = usuarioRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+        Usuario usuario = contexto.getUsuarioLogueado();
 
         // 3. ¡Usamos tu método estático perfecto del record!
         UsuarioResponseDTO response = UsuarioResponseDTO.mapToResponse(usuario);
