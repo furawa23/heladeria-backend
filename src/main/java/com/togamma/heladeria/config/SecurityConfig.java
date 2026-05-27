@@ -28,41 +28,38 @@ import lombok.RequiredArgsConstructor;
 
 @Configuration
 @EnableWebSecurity
-@RequiredArgsConstructor // 1. Inyecta dependencias automáticamente (Lombok)
+@RequiredArgsConstructor
 public class SecurityConfig {
 
-    // Inyectamos el servicio que busca usuarios en TU base de datos
     private final UserDetailsService userDetailsService;
     private final JwtAuthenticationFilter jwtAuthFilter;
+    private final OAuth2SuccessHandler oAuth2SuccessHandler;
+    private final HttpCookieOAuth2AuthorizationRequestRepository cookieRepo; // ← NUEVO
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-            // 2. Mantenemos tu configuración de CORS (Angular lo necesita)
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-            
-            // 3. Desactivar CSRF (Correcto para APIs REST)
             .csrf(AbstractHttpConfigurer::disable)
-            
-            // 4. AQUI CAMBIAMOS LA SEGURIDAD: De "todo abierto" a "necesitas permiso"
             .authorizeHttpRequests(auth -> auth
-                // Rutas públicas (Login, Registro, etc.)
-                .requestMatchers("/api/auth/login", "/public/**").permitAll()
-                // Rutas solo para ADMIN (Ejemplo)
-                .requestMatchers("/api/usuarios/superadmin").hasAnyRole(Rol.SUPERADMIN.toString(),Rol.DUENO.toString())
-                // Todo lo demás requiere estar logueado
+                .requestMatchers("/api/auth/login", "/public/**", "/login/oauth2/**", "/oauth2/**").permitAll()
+                .requestMatchers("/api/usuarios/superadmin").hasAnyRole(Rol.SUPERADMIN.toString(), Rol.DUENO.toString())
                 .anyRequest().authenticated()
             )
-            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            // 5. Configurar el proveedor de autenticación (DB + BCrypt)
+            .sessionManagement(session -> session
+                .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+            )
             .authenticationProvider(authenticationProvider())
-            
+            .oauth2Login(oauth2 -> oauth2
+                .authorizationEndpoint(a -> a
+                    .authorizationRequestRepository(cookieRepo) // ← NUEVO: guarda el "state" en cookie, no en sesión
+                )
+                .successHandler(oAuth2SuccessHandler)
+            )
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
-
-    // --- BEANS DE SEGURIDAD (Nuevos) ---
 
     @Bean
     public AuthenticationProvider authenticationProvider() {
@@ -73,7 +70,7 @@ public class SecurityConfig {
 
     @Bean
     public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder(); // El estándar de la industria
+        return new BCryptPasswordEncoder();
     }
 
     @Bean
@@ -81,16 +78,14 @@ public class SecurityConfig {
         return config.getAuthenticationManager();
     }
 
-    // --- TU CONFIGURACIÓN DE CORS (Intacta) ---
-    
     @Bean
     CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("http://localhost:4200", "http://178.238.237.71:4323", "https://heladeria.togamma.lat"));
+        configuration.setAllowedOrigins(List.of("http://localhost:4200", "https://heladeria.togamma.lat"));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);
-        
+
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
         return source;

@@ -30,4 +30,6 @@ public interface UsuarioRepository extends SucursalScopedRepository<Usuario> {
     Page<Usuario> findBySucursalEmpresaId(Long idEmpresa, Pageable pageable);
 
     Optional<Usuario> findBasicById(Long id);
+
+    Optional<Usuario> findByGoogleEmail(String googleEmail);
 }

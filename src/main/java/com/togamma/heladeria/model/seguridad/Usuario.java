@@ -18,6 +18,7 @@ public class Usuario extends BaseEntity {
 
     private String username;
     private String password;
+    private String googleEmail;
 
     @Enumerated(EnumType.STRING)
     private Rol rol;
