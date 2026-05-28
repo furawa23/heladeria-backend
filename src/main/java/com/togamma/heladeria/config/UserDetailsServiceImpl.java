@@ -29,6 +29,10 @@ public class UserDetailsServiceImpl implements UserDetailsService {
         // 2. Lógica de validación (Soft Delete)
         boolean isEnabled = true;
 
+        if (usuario.getDeletedAt() != null) {
+            isEnabled = false;
+        }
+
         if (usuario.getRol() != Rol.SUPERADMIN) {
             // Si la empresa tiene fecha de eliminación, bloqueamos al dueño y a sus empleados
             if (usuario.getEmpresa() != null && usuario.getEmpresa().getDeletedAt() != null) {

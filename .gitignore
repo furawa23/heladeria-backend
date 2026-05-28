@@ -19,8 +19,7 @@
 
 # 5. SEGURIDAD: Ignorar configuración con credenciales
 # Es vital para que no vean tus claves de base de datos
-#src/main/resources/application.properties
-src/main/resources/application.yml
+src/main/resources/application-local.properties
 
 # 6. BASURA DE COMPILACIÓN Y IDE
 /target/
