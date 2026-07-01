@@ -68,7 +68,11 @@ public class HttpCookieOAuth2AuthorizationRequestRepository
         cookie.setPath("/");
         cookie.setHttpOnly(true);  // No accesible desde JavaScript
         cookie.setMaxAge(maxAge);
-        cookie.setSecure(true);    // Solo HTTPS — perfecto para tu setup en Dokploy
+        cookie.setSecure(true);    // Solo HTTPS
+        
+        // ---> LA LÍNEA MÁGICA QUE TE FALTABA <---
+        cookie.setAttribute("SameSite", "None"); 
+        
         response.addCookie(cookie);
     }
 
@@ -80,6 +84,11 @@ public class HttpCookieOAuth2AuthorizationRequestRepository
                     cookie.setValue("");
                     cookie.setPath("/");
                     cookie.setMaxAge(0);
+                    
+                    // Al borrar la cookie cross-domain, debes incluir los mismos atributos
+                    cookie.setSecure(true); 
+                    cookie.setAttribute("SameSite", "None");
+                    
                     response.addCookie(cookie);
                 }
             }

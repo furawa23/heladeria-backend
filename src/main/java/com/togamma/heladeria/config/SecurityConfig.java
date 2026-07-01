@@ -67,7 +67,7 @@ public class SecurityConfig {
                 .successHandler(oAuth2SuccessHandler)
                 // Opcional: Para capturar errores del login con Google si ocurren
                 .failureHandler((request, response, exception) -> {
-                    response.sendRedirect("https://heladeria.togamma.lat/auth/login?error=oauth2_failed");
+                    response.sendRedirect(frontendUrl + "/auth/login?error=oauth2_failed");
                 })
             )
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
