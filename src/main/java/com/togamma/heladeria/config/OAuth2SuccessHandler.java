@@ -13,6 +13,7 @@ import org.springframework.stereotype.Component;
 import com.togamma.heladeria.model.seguridad.Rol;
 import com.togamma.heladeria.model.seguridad.Usuario;
 import com.togamma.heladeria.repository.seguridad.UsuarioRepository;
+import com.togamma.heladeria.service.seguridad.ActiveSessionService;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -24,7 +25,8 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
 
     private final UsuarioRepository usuarioRepository;
     private final JwtService jwtService;
-    private final UserDetailsService userDetailsService; // ← AGREGAR
+    private final UserDetailsService userDetailsService;
+    private final ActiveSessionService activeSessionService;
 
     @Value("${app.frontend.url}")
     private String frontendUrl;
@@ -49,9 +51,16 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
                 });
 
         // Cargar como UserDetails (lo que JwtService espera)
-        UserDetails userDetails = userDetailsService.loadUserByUsername(usuario.getUsername()); // ← CAMBIO
+        UserDetails userDetails = userDetailsService.loadUserByUsername(usuario.getUsername());
 
-        String jwt = jwtService.generateToken(userDetails); // ← ahora sí compila
+        String jwt = jwtService.generateToken(userDetails);
+
+        // Validar que no haya una sesión activa en otro dispositivo
+        if (!activeSessionService.registerSession(usuario.getUsername(), jwt)) {
+            response.sendRedirect(frontendUrl + "/auth/login?error=active_session");
+            return;
+        }
+
         response.sendRedirect(frontendUrl + "/auth/callback?token=" + jwt);
     }
 }

@@ -6,13 +6,16 @@ import com.togamma.heladeria.dto.response.seguridad.AuthResponseDTO;
 import com.togamma.heladeria.dto.response.seguridad.UsuarioResponseDTO;
 import com.togamma.heladeria.model.seguridad.Usuario;
 import com.togamma.heladeria.repository.seguridad.UsuarioRepository;
+import com.togamma.heladeria.service.seguridad.ActiveSessionService;
 
 import lombok.RequiredArgsConstructor;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 @Service
 @RequiredArgsConstructor
@@ -21,6 +24,7 @@ public class AuthService {
     private final UsuarioRepository usuarioRepository;
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
+    private final ActiveSessionService activeSessionService;
 
     public AuthResponseDTO login(LoginRequestDTO request) {
         // 1. Autenticar (Esto lanzará excepción si el password es incorrecto)
@@ -33,6 +37,12 @@ public class AuthService {
         
         UserDetails userDetails = (UserDetails) auth.getPrincipal();
         String token = jwtService.generateToken(userDetails);
+
+        // Validar que no haya una sesión activa en otro dispositivo
+        if (!activeSessionService.registerSession(userDetails.getUsername(), token)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Ya existe una sesión activa para este usuario en otro dispositivo.");
+        }
+
         // 2. Si pasó la línea anterior, el usuario es correcto. Buscamos sus datos.
         Usuario usuario = usuarioRepository.findByUsername(request.username())
                 .orElseThrow();
@@ -42,5 +52,9 @@ public class AuthService {
 
         // 5. Retornamos Token + Datos
         return new AuthResponseDTO(token, usuarioResponse);
+    }
+
+    public void logout(String username) {
+        activeSessionService.removeSession(username);
     }
 }

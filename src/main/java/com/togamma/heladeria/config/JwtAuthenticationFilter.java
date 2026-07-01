@@ -1,5 +1,6 @@
 package com.togamma.heladeria.config;
 
+import com.togamma.heladeria.service.seguridad.ActiveSessionService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -22,6 +23,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
     private final UserDetailsService userDetailsService;
+    private final ActiveSessionService activeSessionService;
 
     @Override
     protected void doFilterInternal(
@@ -48,8 +50,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
             UserDetails userDetails = this.userDetailsService.loadUserByUsername(username);
 
-            // 4. Si el token es válido, autenticar manualmente a Spring Security
-            if (jwtService.isTokenValid(jwt, userDetails)) {
+            // 4. Si el token es válido y es el token activo, autenticar manualmente a Spring Security
+            if (jwtService.isTokenValid(jwt, userDetails) && activeSessionService.isTokenActive(username, jwt)) {
+                activeSessionService.updateActivity(username, jwt);
+                
                 UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
                         userDetails,
                         null,
